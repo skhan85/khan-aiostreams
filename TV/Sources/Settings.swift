@@ -399,6 +399,7 @@ struct SettingsView: View {
     @EnvironmentObject private var session: Session
     @EnvironmentObject private var prefs: Preferences
     @State private var chooser: Chooser?
+    @State private var externalPlayer = ExternalPlayer.current
     @State private var picker: MultiChooser?
     /// The server lets another device sign in with a code this account approves.
     @State private var quickConnect = false
@@ -468,6 +469,15 @@ struct SettingsView: View {
     @ViewBuilder private func pageContent(_ page: SettingsPage) -> some View {
         switch page {
         case .playback:
+            section(nil, note: L("Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player.")) {
+                row(L("Player"), value: externalPlayer.label) {
+                    chooser = Chooser(title: L("Player"), options: ExternalPlayer.allCases.map { ($0.label, $0.rawValue) }, current: externalPlayer.rawValue) {
+                        let chosen = ExternalPlayer(rawValue: $0) ?? .infuse
+                        ExternalPlayer.current = chosen
+                        externalPlayer = chosen
+                    }
+                }
+            }
             section(nil, note: L("Saved to your account, so the web app and your other devices use them too.")) {
                 toggle(L("Auto-play the first version"), key: "autoPlayFirst", fallback: false)
                 toggle(L("Find versions when a title opens"), key: "preloadVersions", fallback: false)
