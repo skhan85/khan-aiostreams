@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.io.github.aiostreams-ios.tv</string>
+		<string>group.com.skhan85.khanaiostreams.tv</string>
 	</array>
 </dict>
 </plist>

@@ -82,7 +82,7 @@ shot() {
 tv=$(simulator "Apple TV 4K" tvOS)
 prepare "$tv"
 xcrun simctl install "$tv" "$tv_app"
-tvid=io.github.aiostreams-ios.tv
+tvid=com.skhan85.khanaiostreams.tv
 shot "$tv" $tvid tv-signin 8 -demoScreen signin
 shot "$tv" $tvid tv-home 14 -demoScreen home
 shot "$tv" $tvid tv-rail 14 -demoScreen rail
@@ -100,7 +100,7 @@ web() {
     --cellularMode active --cellularBars 4 --wifiBars 3 || true
   xcrun simctl install "$udid" "$ios_app"
   local args=(-demoServerId "$server_id" -demoUserId "$user" -demoToken demo-token)
-  local appid=io.github.aiostreams-ios.app
+  local appid=com.skhan85.khanaiostreams
   shot "$udid" $appid "$prefix-home" 14 "${args[@]}" -demoRoute "/"
   shot "$udid" $appid "$prefix-show" 14 "${args[@]}" -demoRoute "/item/$show"
   shot "$udid" $appid "$prefix-movie" 14 "${args[@]}" -demoRoute "/item/$movie"
