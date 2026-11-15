@@ -166,9 +166,21 @@ struct PlayFlow: ViewModifier {
     private func present(_ request: PlayRequest) {
         if WatchParty.shared.live, !request.isTrailer, !request.item.isChannel, request.partyEntry == nil {
             PartyFollow.shared.playForParty(request)
-        } else {
-            playing = request
+            return
         }
+        // Khan AIOStreams: Infuse or VLC where chosen, the app's own player otherwise.
+        let player = ExternalPlayer.current
+        if player.takes(request), let client = session.client {
+            Task {
+                if await player.open(request, client: client) {
+                    finished()
+                } else {
+                    playing = request
+                }
+            }
+            return
+        }
+        playing = request
     }
 
     /// The version that was playing, else the first; the list where there's none to play.
