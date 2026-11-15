@@ -1,0 +1,15 @@
+diff --git a/packages/web/src/lib/settings/index.ts b/packages/web/src/lib/settings/index.ts
+index 6135b35..e57400d 100644
+--- a/packages/web/src/lib/settings/index.ts
++++ b/packages/web/src/lib/settings/index.ts
+@@ -590,8 +590,8 @@ export const settings = {
+     ),
+   },
+   player: {
+-    /** `app`, a player's id, or `custom` for `link`. */
+-    choice: device<string>('aiostreams-web-player-choice', 'app', undefined, [
++    /** `app`, a player's id, or `custom` for `link`. Khan AIOStreams: Infuse unless changed. */
++    choice: device<string>('aiostreams-web-player-choice', 'infuse', undefined, [
+       'aiostreams-web-player',
+     ]),
+     link: device<string>('aiostreams-web-player-link', ''),

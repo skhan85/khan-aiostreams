@@ -20,6 +20,8 @@ git -C "$src" fetch --depth 1 origin "$ref"
 git -C "$src" checkout --force FETCH_HEAD
 git -C "$src" clean -fdq packages/web/src
 git -C "$src" apply --3way "$here/web/ios-host.patch"
+# Khan AIOStreams: this fork's own changes to the page (Infuse as the default player).
+git -C "$src" apply --3way "$here/web/khan.patch"
 
 (
   cd "$src"
