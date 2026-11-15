@@ -91,7 +91,7 @@ final class DownloadQueue: NSObject {
         return URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     }()
 
-    static let sessionID = "io.github.aiostreams-ios.downloads"
+    static let sessionID = "com.skhan85.khanaiostreams.downloads"
     private static let maxConcurrent = 4
 
     private override init() {

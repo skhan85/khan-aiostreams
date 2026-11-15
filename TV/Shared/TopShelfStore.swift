@@ -4,7 +4,7 @@ import Foundation
 /// Continue watching and Next up, which the app leaves in the app group's defaults as it loads Home,
 /// for the Top Shelf extension to read. The images are the server's, which need no sign-in.
 enum TopShelfStore {
-    static let group = "group.io.github.aiostreams-ios.tv"
+    static let group = "group.com.skhan85.khanaiostreams.tv"
     private static let key = "topShelf"
 
     struct Shelf: Codable {

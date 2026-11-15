@@ -139,7 +139,7 @@ final class Session: ObservableObject {
 
 /// Generic password items for this app alone.
 enum Keychain {
-    private static let service = "io.github.aiostreams-ios.tv"
+    private static let service = "com.skhan85.khanaiostreams.tv"
 
     private static func query(_ key: String) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: key]

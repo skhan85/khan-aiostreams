@@ -111,3 +111,21 @@ jobs:
           python3 scripts/altstore-source.py build/releases.json "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" \
             build/AIOStreams.ipa build/altstore.json
           gh release upload "$GITHUB_REF_NAME" build/altstore.json --clobber
+
+      # Khan AIOStreams: every push to main publishes its IPAs as a release, for atvloadly to install.
+      # Made with the workflow's own token, so it starts no further runs.
+      - name: Publish a build release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(cat build/version.txt)
+          number=$(git rev-list --count HEAD)
+          tag="build-$version-$number"
+          mkdir -p build/release
+          cp build/AIOStreams.ipa "build/release/KhanAIOStreams-$version-$number.ipa"
+          cp build/AIOStreams-tvOS.ipa "build/release/KhanAIOStreams-tvOS-$version-$number.ipa"
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --target "$GITHUB_SHA" --latest \
+            --title "Khan AIOStreams $version ($number)" \
+            --notes "Unsigned IPAs built from $(git log -1 --format=%h): sign them when you install them (atvloadly for Apple TV)."
+          gh release upload "$tag" build/release/*.ipa --clobber

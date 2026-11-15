@@ -1,6 +1,6 @@
 name: AIOStreams
 options:
-  bundleIdPrefix: io.github.aiostreams-ios
+  bundleIdPrefix: com.skhan85.khanaiostreams
   deploymentTarget:
     iOS: "18.0"
     tvOS: "18.0"
@@ -35,7 +35,7 @@ targets:
     info:
       path: AIOStreams/Info.plist
       properties:
-        CFBundleDisplayName: AIOStreams
+        CFBundleDisplayName: Khan AIOStreams
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         # The languages the web app lists. On iOS, they're what lets the page's Automatic language
@@ -73,17 +73,17 @@ targets:
         # ones) beside it, iOS and tvOS ignore it and allow plain http on the local network alone.
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
-        NSLocalNetworkUsageDescription: AIOStreams connects to your server and streams on your local network.
+        NSLocalNetworkUsageDescription: Khan AIOStreams connects to your server and streams on your local network.
         NSMicrophoneUsageDescription: Voice search in the page's search field uses the microphone.
         CFBundleURLTypes:
-          - CFBundleURLName: io.github.aiostreams-ios.link
+          - CFBundleURLName: com.skhan85.khanaiostreams.link
             CFBundleURLSchemes:
               - aiostreams
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.aiostreams-ios.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.skhan85.khanaiostreams
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
@@ -113,11 +113,11 @@ targets:
     entitlements:
       path: TV/AIOStreamsTV.entitlements
       properties:
-        com.apple.security.application-groups: [group.io.github.aiostreams-ios.tv]
+        com.apple.security.application-groups: [group.com.skhan85.khanaiostreams.tv]
     info:
       path: TV/Info.plist
       properties:
-        CFBundleDisplayName: AIOStreams
+        CFBundleDisplayName: Khan AIOStreams
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDevelopmentRegion: en
@@ -133,10 +133,10 @@ targets:
         # ones) beside it, iOS and tvOS ignore it and allow plain http on the local network alone.
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
-        NSLocalNetworkUsageDescription: AIOStreams connects to your server and streams on your local network.
+        NSLocalNetworkUsageDescription: Khan AIOStreams connects to your server and streams on your local network.
         # Top Shelf's links: a title's page, or playing it.
         CFBundleURLTypes:
-          - CFBundleURLName: io.github.aiostreams-ios.tv.link
+          - CFBundleURLName: com.skhan85.khanaiostreams.tv.link
             CFBundleURLSchemes:
               - aiostreams
         UIAppFonts:
@@ -147,7 +147,7 @@ targets:
           - Inter-ExtraBold.ttf
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.aiostreams-ios.tv
+        PRODUCT_BUNDLE_IDENTIFIER: com.skhan85.khanaiostreams.tv
         TARGETED_DEVICE_FAMILY: "3"
         ASSETCATALOG_COMPILER_APPICON_NAME: "App Icon & Top Shelf Image"
         CODE_SIGN_STYLE: Automatic
@@ -161,11 +161,11 @@ targets:
     entitlements:
       path: TV/TopShelf/TopShelf.entitlements
       properties:
-        com.apple.security.application-groups: [group.io.github.aiostreams-ios.tv]
+        com.apple.security.application-groups: [group.com.skhan85.khanaiostreams.tv]
     info:
       path: TV/TopShelf/Info.plist
       properties:
-        CFBundleDisplayName: AIOStreams Top Shelf
+        CFBundleDisplayName: Khan AIOStreams Top Shelf
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
@@ -173,6 +173,6 @@ targets:
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ContentProvider
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.aiostreams-ios.tv.topshelf
+        PRODUCT_BUNDLE_IDENTIFIER: com.skhan85.khanaiostreams.tv.topshelf
         TARGETED_DEVICE_FAMILY: "3"
         CODE_SIGN_STYLE: Automatic

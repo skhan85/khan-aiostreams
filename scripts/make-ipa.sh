@@ -33,6 +33,10 @@ if [ -z "${APP_VERSION:-}" ]; then
     || git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)
   APP_VERSION="${tag#v}"
 fi
+# Khan AIOStreams: this fork's own version, from VERSION, where no v* tag is reachable.
+if [ -z "${APP_VERSION:-}" ] && [ -f VERSION ]; then
+  APP_VERSION=$(tr -d '[:space:]' < VERSION)
+fi
 if [ -z "${BUILD_NUMBER:-}" ]; then
   if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
     echo "a shallow clone can't count its commits: fetch the full history or set BUILD_NUMBER" >&2
