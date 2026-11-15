@@ -1,0 +1,55 @@
+name: Upstream sync
+
+# Khan AIOStreams: merges wizaarddlabs/aiostreams-ios into a branch each day and opens a pull
+# request when there's anything new, then builds that branch so the PR shows whether it builds.
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Merge upstream into upstream-sync
+        id: merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/wizaarddlabs/aiostreams-ios.git
+          git fetch --no-tags upstream main
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "Nothing new upstream."
+            exit 0
+          fi
+          git checkout -B upstream-sync
+          if ! git merge --no-edit upstream/main -m "Merge wizaarddlabs/aiostreams-ios $(git rev-parse --short upstream/main)"; then
+            git merge --abort
+            echo "::error::Upstream changes conflict with ours; merge them by hand."
+            exit 1
+          fi
+          git push --force origin upstream-sync
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+      - name: Open the pull request and build it
+        if: steps.merge.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(gh pr list --head upstream-sync --state open --json number --jq '.[].number')" ]; then
+            gh pr create --head upstream-sync --base main \
+              --title "Sync with wizaarddlabs/aiostreams-ios" \
+              --body "Upstream changes from https://github.com/wizaarddlabs/aiostreams-ios, merged automatically. The Build IPA run on this branch shows whether it still builds."
+          fi
+          # A pull request opened with this token starts no checks itself, so build the branch here.
+          gh workflow run build-ipa.yml --ref upstream-sync

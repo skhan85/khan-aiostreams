@@ -76,7 +76,8 @@ build() {
     CODE_SIGNING_REQUIRED=NO \
     CODE_SIGN_IDENTITY="" \
     MARKETING_VERSION="$APP_VERSION" \
-    CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+    CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+    KHAN_DEFAULT_SERVER="${KHAN_DEFAULT_SERVER:-}"
 
   local app="$derived/Build/Products/$products/$scheme.app"
   [ -d "$app" ] || { echo "no app at $app" >&2; exit 1; }

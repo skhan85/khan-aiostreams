@@ -75,7 +75,9 @@ struct WelcomeBackground: View {
 
 struct ServerView: View {
     @EnvironmentObject private var session: Session
-    @State private var address = ""
+    /// Khan AIOStreams: starts with the address the build was given (the KHAN_DEFAULT_SERVER secret).
+    @State private var address = (Bundle.main.object(forInfoDictionaryKey: "KhanDefaultServer") as? String)?
+        .trimmingCharacters(in: .whitespaces) ?? ""
     @State private var working = false
     @State private var error: String?
 

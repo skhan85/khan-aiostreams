@@ -120,6 +120,8 @@ targets:
         CFBundleDisplayName: Khan AIOStreams
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # Khan AIOStreams: the server address the sign-in screen starts with, from the build.
+        KhanDefaultServer: $(KHAN_DEFAULT_SERVER)
         CFBundleDevelopmentRegion: en
         CFBundleLocalizations: [en, ar, de, el, es, fr, id, it, ms, pl, pt-BR, pt-PT, ro, tr, zh-Hans]
         LSRequiresIPhoneOS: true
