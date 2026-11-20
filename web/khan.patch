@@ -1,9 +1,9 @@
 diff --git a/packages/web/src/lib/settings/index.ts b/packages/web/src/lib/settings/index.ts
-index 6135b35..e57400d 100644
+index 3f11e17..af27eff 100644
 --- a/packages/web/src/lib/settings/index.ts
 +++ b/packages/web/src/lib/settings/index.ts
-@@ -590,8 +590,8 @@ export const settings = {
-     ),
+@@ -623,8 +623,8 @@ export const settings = {
+     clock: device<boolean>('aiostreams-web-controls-clock', true),
    },
    player: {
 -    /** `app`, a player's id, or `custom` for `link`. */
@@ -12,4 +12,4 @@ index 6135b35..e57400d 100644
 +    choice: device<string>('aiostreams-web-player-choice', 'infuse', undefined, [
        'aiostreams-web-player',
      ]),
-     link: device<string>('aiostreams-web-player-link', ''),
+     link: local(device<string>('aiostreams-web-player-link', '')),
