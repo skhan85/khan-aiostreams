@@ -77,7 +77,9 @@ final class RootViewController: UIViewController, WKNavigationDelegate, WKUIDele
         webView.scrollView.backgroundColor = .clear
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.bounces = false
-        webView.allowsBackForwardNavigationGestures = true
+        // WebKit's own back swipe slides the page off over a blank web view while the last page
+        // loads again; the page's own back slide, fed by the edge swipes below, shows it at once.
+        webView.allowsBackForwardNavigationGestures = false
         webView.allowsLinkPreview = false
         webView.isInspectable = true
         webView.navigationDelegate = self
@@ -111,6 +113,14 @@ final class RootViewController: UIViewController, WKNavigationDelegate, WKUIDele
         player.showVideo = { [weak self] shown in
             self?.stage.show(shown)
             self?.overlay.isHidden = !shown
+        }
+        // A swipe in from either edge goes back, as on Android: the page slides off with the finger
+        // over the one beneath (upstream `back-slide.ts`, fed as the Android app feeds it).
+        for edge in [UIRectEdge.left, .right] {
+            let swipe = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(backSwipe(_:)))
+            swipe.edges = edge
+            webView.addGestureRecognizer(swipe)
+            webView.scrollView.panGestureRecognizer.require(toFail: swipe)
         }
         // Drags of the small video, which the page can't follow over the app's own video.
         let drag = UIPanGestureRecognizer(target: self, action: #selector(dragMiniPlayer(_:)))
@@ -152,6 +162,39 @@ final class RootViewController: UIViewController, WKNavigationDelegate, WKUIDele
         super.viewDidLayoutSubviews()
         // A turn or resize moves the page's frame with it.
         stage.refresh()
+    }
+
+    // MARK: - Back swipe
+
+    /// The finger's share of the width, which the page moves by; let go past a third, or flicked,
+    /// it goes back, else it slides home again. Full screen, the player keeps the edges.
+    @objc private func backSwipe(_ swipe: UIScreenEdgePanGestureRecognizer) {
+        let width = max(webView.bounds.width, 1)
+        let fromRight = swipe.edges == .right
+        let sign: CGFloat = fromRight ? -1 : 1
+        let progress = min(max(sign * swipe.translation(in: webView).x / width, 0), 1)
+        switch swipe.state {
+        case .began:
+            guard !fullscreen else {
+                swipe.isEnabled = false
+                swipe.isEnabled = true
+                return
+            }
+            bridge.send(["type": "back-gesture", "event": "start", "fromRight": fromRight])
+        case .changed:
+            bridge.send(["type": "back-gesture", "event": "move", "progress": progress])
+        case .ended:
+            let flicked = sign * swipe.velocity(in: webView).x > 600
+            if progress > 0.33 || (flicked && progress > 0.05) {
+                bridge.send(["type": "back"])
+            } else {
+                bridge.send(["type": "back-gesture", "event": "cancel"])
+            }
+        case .cancelled, .failed:
+            bridge.send(["type": "back-gesture", "event": "cancel"])
+        default:
+            break
+        }
     }
 
     // MARK: - The mini player's drag

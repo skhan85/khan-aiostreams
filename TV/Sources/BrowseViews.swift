@@ -13,10 +13,10 @@ extension View {
         navigationDestination(for: Route.self) { route in
             Group {
                 switch route {
-                case .item(let item): DetailView(item: item)
-                case .library(let view): LibraryView(view: view)
-                case .person(let person): PersonView(person: person)
-                case .playlist(let playlist): PlaylistView(playlist: playlist)
+                case .item(let item): DetailView(item: item).artPage("item")
+                case .library(let view): LibraryView(view: view).artPage("browse")
+                case .person(let person): PersonView(person: person).artPage("browse")
+                case .playlist(let playlist): PlaylistView(playlist: playlist).artPage("other")
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -542,7 +542,7 @@ struct SearchView: View {
     private func grid(in edges: Edge.Set) -> some View {
         ScrollView {
             // Live TV channels the search finds (server v2.38), which play rather than open a page.
-            let channels = results.filter(\.isChannel)
+            let channels = prefs.liveTv == "off" ? [] : results.filter(\.isChannel)
             if !channels.isEmpty {
                 VStack(alignment: .leading, spacing: Theme.px(8)) {
                     Text(L("Channels")).font(Theme.font(Theme.xl, .semibold)).pagePadding()
@@ -604,7 +604,7 @@ struct SearchView: View {
             "userId": userId,
             "SearchTerm": term,
             "Recursive": "true",
-            "IncludeItemTypes": "Movie,Series,TvChannel",
+            "IncludeItemTypes": prefs.liveTv == "off" ? "Movie,Series" : "Movie,Series,TvChannel",
             "Limit": "48",
         ])
         if !Task.isCancelled { results = result?.items ?? [] }

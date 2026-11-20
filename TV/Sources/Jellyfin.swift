@@ -594,7 +594,8 @@ struct JellyfinClient: Sendable {
     ]
 
     /// The version list, or with `sourceId` one version with its subtitles from subtitle addons.
-    func playbackInfo(userId: String, itemId: String, sourceId: String? = nil, refresh: Bool = false) async throws -> PlaybackInfo {
+    func playbackInfo(userId: String, itemId: String, sourceId: String? = nil, refresh: Bool = false,
+                      addonSubtitles: Bool = false) async throws -> PlaybackInfo {
         var body: [String: Any] = [
             "UserId": userId,
             "DeviceProfile": Self.deviceProfile,
@@ -606,8 +607,10 @@ struct JellyfinClient: Sendable {
             body["MediaSourceId"] = sourceId
         } else {
             body["Fresh"] = true
-            body["SkipSubtitles"] = true
         }
+        // Addon subtitles are asked for once a version plays (the web app's useLaterSubtitles), so a
+        // version opens without waiting for them; `addonSubtitles` asks for them.
+        if !addonSubtitles { body["SkipSubtitles"] = true }
         if refresh { body["Refresh"] = true }
         return try await post("/Items/\(itemId)/PlaybackInfo", ["userId": userId], body: body)
     }

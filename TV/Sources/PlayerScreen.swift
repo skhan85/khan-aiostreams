@@ -82,6 +82,7 @@ struct PlayerScreen: View {
             look: prefs.subtitleLook,
             speakers: prefs.speakers,
             animeUpscaling: prefs.animeUpscaling,
+            toneMapNits: prefs.toneMapNits,
             userId: session.userId,
             rules: prefs.playerRules
         )
@@ -145,7 +146,7 @@ struct PlayerScreen: View {
               var source = info.mediaSources?.first else { return }
         var playSession = info.playSessionId
         // Named, as when a channel is chosen from Live TV, for its stream in full.
-        if let named = try? await client.playbackInfo(userId: userId, itemId: next.id, sourceId: source.ownId),
+        if let named = try? await client.playbackInfo(userId: userId, itemId: next.id, sourceId: source.ownId, addonSubtitles: true),
            let match = named.mediaSources?.first(where: { $0.ownId == source.ownId }) ?? named.mediaSources?.first {
             source = match
             playSession = named.playSessionId ?? playSession
@@ -193,6 +194,9 @@ private struct PlayerChrome: View {
     @State private var freshTask: Task<Void, Never>?
     /// "Skipped intro", after a skip the settings made.
     @State private var notice: String?
+    /// The brief icon a pause, play or skip shows while the controls stay hidden, as the web app's.
+    @State private var glance: String?
+    @State private var glanceTask: Task<Void, Never>?
     @State private var noticeTask: Task<Void, Never>?
     /// Back hid the up next offer; seeking back before it brings it back.
     @State private var upNextDismissed = false
@@ -316,8 +320,9 @@ private struct PlayerChrome: View {
                     switch direction {
                     // Live, there's nothing to skip through: a press only shows the controls.
                     case .left where model.isLive, .right where model.isLive: reveal(.play)
-                    case .left: if !moved(-1) { model.skip(-step) }; if prefs.showOnPauseAndSkip { reveal(.bar) }
-                    case .right: if !moved(1) { model.skip(step) }; if prefs.showOnPauseAndSkip { reveal(.bar) }
+                    // The controls stay hidden, as the web app now leaves them: a brief icon says what happened.
+                    case .left: if !moved(-1) { model.skip(-step); flash(Self.skipSymbol(back: true, seconds: Int(step))) }
+                    case .right: if !moved(1) { model.skip(step); flash(Self.skipSymbol(back: false, seconds: Int(step))) }
                     // On a channel, up and down change channel, as a TV's remote does.
                     case .up where model.request.item.isChannel: changeChannel(-1)
                     case .down where model.request.item.isChannel: changeChannel(1)
@@ -372,6 +377,16 @@ private struct PlayerChrome: View {
                     }) { closePanel() }
                 }
                 .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+
+            if let glance, !shown, panel == nil {
+                Image(systemName: glance)
+                    .font(.system(size: Theme.px(40), weight: .semibold))
+                    .frame(width: Theme.px(96), height: Theme.px(96))
+                    .background(Circle().fill(.black.opacity(0.55)))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    .allowsHitTesting(false)
             }
 
             if panel == nil && model.failure == nil {
@@ -465,7 +480,11 @@ private struct PlayerChrome: View {
             playOn(auto: true)
         }
         .onChange(of: model.paused) { _, paused in
-            if paused { if prefs.showOnPauseAndSkip || shown { reveal(nil) } } else { wake() }
+            if shown {
+                if paused { reveal(nil) } else { wake() }
+            } else {
+                flash(paused ? "pause.fill" : "play.fill")
+            }
         }
     }
 
@@ -770,6 +789,22 @@ private struct PlayerChrome: View {
         wake()
     }
 
+    /// Shows `symbol` for a moment over the video.
+    private func flash(_ symbol: String) {
+        withAnimation(.easeOut(duration: 0.15)) { glance = symbol }
+        glanceTask?.cancel()
+        glanceTask = Task {
+            try? await Task.sleep(for: .milliseconds(700))
+            if !Task.isCancelled { withAnimation(.easeOut(duration: 0.25)) { glance = nil } }
+        }
+    }
+
+    /// The back or forward symbol for a skip, with its seconds where the symbol has them.
+    static func skipSymbol(back: Bool, seconds: Int) -> String {
+        let name = back ? "gobackward" : "goforward"
+        return [5, 10, 15, 30, 45, 60, 75, 90].contains(seconds) ? "\(name).\(seconds)" : name
+    }
+
     private func show(_ text: String) {
         notice = text
         noticeTask?.cancel()
@@ -1044,6 +1079,9 @@ private struct PlayerPanelView: View {
     @EnvironmentObject private var prefs: Preferences
     /// Subtitles in other languages, which List only my languages keeps under More languages.
     @State private var allLanguages = false
+    /// Where focus lands as the panel opens: the row that's on. Pressing the button that opens it
+    /// leaves focus in the bar, from where a press right reaches the bar's next button instead.
+    @FocusState private var landing: Bool
 
     /// The subtitles listed: with List only my languages, those in the user's languages, without a
     /// language, and the one on; the rest wait under More languages.
@@ -1089,11 +1127,14 @@ private struct PlayerPanelView: View {
                     }
                 case .chapters:
                     group(L("Chapters")) {
+                        // The chapter playing takes focus as the panel opens.
+                        let playing = model.chapters.last { $0.start <= model.position }?.id ?? model.chapters.first?.id
                         ForEach(model.chapters, id: \.id) { chapter in
                             ChapterRow(model: model, chapter: chapter, time: clock(chapter.start)) {
                                 model.seek(to: chapter.start)
                                 done()
                             }
+                            .modifier(LandsFocus(on: chapter.id == playing, landing: $landing))
                         }
                     }
                 case .speed:
@@ -1106,7 +1147,7 @@ private struct PlayerPanelView: View {
                     }
                 case .sync:
                     group(L("Subtitles")) {
-                        stepper(model.subtitleDelay, step: 0.1) { model.setSubtitleDelay($0) }
+                        stepper(model.subtitleDelay, step: 0.1, lands: true) { model.setSubtitleDelay($0) }
                     }
                     group(L("Audio")) {
                         stepper(model.audioDelay, step: 0.05) { model.setAudioDelay($0) }
@@ -1134,7 +1175,16 @@ private struct PlayerPanelView: View {
         .background(Color(white: 11 / 255).opacity(0.95))
         .focusSection()
         .onExitCommand(perform: done)
-        .task(id: panel) { if panel == .episodes { await loadEpisodes() } }
+        .task(id: panel) {
+            // Once the rows are laid out, focus moves onto the one that's on.
+            try? await Task.sleep(for: .milliseconds(60))
+            landing = true
+            if panel == .episodes {
+                await loadEpisodes()
+                try? await Task.sleep(for: .milliseconds(60))
+                landing = true
+            }
+        }
     }
 
     /// The season playing, as its show lists it.
@@ -1147,10 +1197,11 @@ private struct PlayerPanelView: View {
     }
 
     /// Earlier, the value, later, and back to zero.
-    private func stepper(_ value: Double, step: Double, set: @escaping (Double) -> Void) -> some View {
+    private func stepper(_ value: Double, step: Double, lands: Bool = false, set: @escaping (Double) -> Void) -> some View {
         HStack(spacing: Theme.px(8)) {
             Button { set(value - step) } label: { Image(systemName: "minus") }
                 .buttonStyle(ControlIconStyle())
+                .modifier(LandsFocus(on: lands, landing: $landing))
             Text(value == 0 ? L("In sync") : String(format: "%+.2f s", value))
                 .font(Theme.font(Theme.base, .semibold))
                 .monospacedDigit()
@@ -1176,6 +1227,11 @@ private struct PlayerPanelView: View {
     }
 
     private func row(_ text: String, detail: String? = nil, on: Bool, action: @escaping () -> Void) -> some View {
+        rowButton(text, detail: detail, on: on, action: action)
+            .modifier(LandsFocus(on: on, landing: $landing))
+    }
+
+    private func rowButton(_ text: String, detail: String? = nil, on: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: Theme.px(10)) {
                 Image(systemName: "checkmark")
@@ -1255,6 +1311,16 @@ private struct PanelRowStyle: ButtonStyle {
 }
 
 /// A chapter with its picture: the server's, else a frame or trickplay thumbnail the model makes.
+/// The panel row that's on takes focus as the panel opens.
+private struct LandsFocus: ViewModifier {
+    let on: Bool
+    var landing: FocusState<Bool>.Binding
+
+    func body(content: Content) -> some View {
+        if on { content.focused(landing) } else { content }
+    }
+}
+
 private struct ChapterRow: View {
     @ObservedObject var model: PlayerModel
     let chapter: PlayerChapter

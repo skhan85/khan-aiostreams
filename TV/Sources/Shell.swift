@@ -11,6 +11,14 @@ enum Place: String, CaseIterable, Identifiable {
     /// What the start page setting offers, as the web app's (lib/start-page.ts).
     static let startPages: [Place] = [.home, .discover, .live, .favourites, .calendar, .activity]
 
+    /// The kind of page, for the background from artwork (the web app's `artPageOf`).
+    var artPage: String {
+        switch self {
+        case .home, .discover, .live, .search, .favourites: return "browse"
+        default: return "other"
+        }
+    }
+
     var name: String {
         switch self {
         case .account: return L("You")
@@ -50,6 +58,7 @@ enum Place: String, CaseIterable, Identifiable {
 struct MainView: View {
     @EnvironmentObject private var session: Session
     @EnvironmentObject private var prefs: Preferences
+    @EnvironmentObject private var wash: ArtWash
     /// Opens on the start page; Live TV falls back to Home on a server without it.
     @State private var place: Place = Place(rawValue: UserDefaults.standard.string(forKey: "app.startPage") ?? "") ?? .home
     /// The server's Live TV library, which only a server with channels lists.
@@ -85,6 +94,7 @@ struct MainView: View {
 
             NavigationStack(path: path(place)) {
                 page(place)
+                    .artPage(place.artPage)
                     .routes()
                     .toolbar(.hidden, for: .navigationBar)
             }
@@ -113,8 +123,9 @@ struct MainView: View {
             // The rail's own column, which rows scrolled under it disappear beneath. Over the
             // artwork there's none, as in the web app: the icons sit on the art, and the page
             // fades out before reaching them instead (pageEdge).
-            if !top && !prefs.flag("artBackground", false) {
-                Theme.background
+            // On glass, a column of it in place of the colour, the art included.
+            if !top && (!artShown || prefs.glassSurface != "solid") {
+                GlassBackground(shape: Rectangle(), fill: Theme.background)
                     .frame(width: Theme.px(80))
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
@@ -196,7 +207,7 @@ struct MainView: View {
     /// Over the artwork, the page fades out across the rail's edge, so rows scrolled left dissolve
     /// before the icons rather than passing under them; elsewhere the rail's column covers them.
     @ViewBuilder private var pageEdge: some View {
-        if prefs.flag("artBackground", false) && !top {
+        if artShown && !top {
             HStack(spacing: 0) {
                 Color.clear.frame(width: Theme.px(40))
                 LinearGradient(colors: [.clear, .black], startPoint: .start, endPoint: .end)
@@ -232,7 +243,7 @@ struct MainView: View {
         guard let client = session.client, let userId = session.userId else { return }
         let views: ItemsResult? = try? await client.get("/UserViews", ["userId": userId])
         liveView = views?.items?.first { $0.collectionType == "livetv" }
-        if liveView == nil && place == .live { place = .home }
+        if !liveShown && place == .live { place = .home }
     }
 
     /// Screenshot mode only: opens the screen the launch asked for.
@@ -322,6 +333,12 @@ struct MainView: View {
     /// the places in a pill, with Settings and you at the end.
     private var top: Bool { prefs.tvNavigation == "top" }
 
+    /// The background from artwork is behind the page on screen.
+    private var artShown: Bool { prefs.artPages.contains(wash.page) && wash.item != nil }
+
+    /// Live TV in the navigation: on a server with it, unless its setting hides it.
+    private var liveShown: Bool { liveView != nil && prefs.liveTv != "off" }
+
     private var topTabs: some View {
         HStack(spacing: Theme.px(6)) {
             BrandLogo(height: Theme.px(22))
@@ -357,10 +374,10 @@ struct MainView: View {
 
     private func places(named: Bool) -> some View {
         HStack(spacing: Theme.px(2)) {
-            ForEach(Place.main.filter { $0 != .live || liveView != nil }) { tab($0, named: named || $0 == place) }
+            ForEach(Place.main.filter { $0 != .live || liveShown }) { tab($0, named: named || $0 == place) }
         }
         .padding(Theme.px(4))
-        .background(Capsule().fill(Color(white: 17 / 255).opacity(0.85)))
+        .background(GlassBackground(shape: Capsule(), fill: Color(white: 17 / 255).opacity(0.85)))
         .fixedSize()
     }
 
@@ -385,7 +402,7 @@ struct MainView: View {
             Rectangle().fill(.white.opacity(0.1)).frame(height: Theme.px(1))
                 .padding(.horizontal, Theme.px(12))
                 .padding(.vertical, Theme.px(4))
-            ForEach(Place.main.filter { $0 != .live || liveView != nil }) { entry($0) }
+            ForEach(Place.main.filter { $0 != .live || liveShown }) { entry($0) }
             Spacer(minLength: 0)
             entry(.settings)
         }

@@ -232,7 +232,8 @@ struct AddToPlaylist: View {
             .padding(Theme.px(20))
             .frame(width: Theme.px(480))
             .frame(maxHeight: Theme.px(600))
-            .background(RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous).fill(Color(white: 17 / 255)))
+            .background(GlassBackground(shape: RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous),
+                                        fill: Color(white: 17 / 255), panel: true))
             .overlay(RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous).stroke(.white.opacity(0.1), lineWidth: Theme.px(1)))
         }
         .foregroundStyle(.white)

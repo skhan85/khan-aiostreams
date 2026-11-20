@@ -258,3 +258,54 @@ private extension UIColor {
                        blue: b1 + (b2 - b1) * share, alpha: a1 + (a2 - a1) * share)
     }
 }
+
+
+// MARK: - Glass
+
+/// The web app's Glass settings, kept on this Apple TV: what the navigation sits on, and whether
+/// panels and cards sit on it too.
+enum GlassSetting {
+    static let surfaceKey = "theme.glassSurface"
+    static let panelsKey = "theme.glassPanels"
+    /// Liquid glass is the system's own (tvOS 26 on); before, glass is frosted.
+    static var canRefract: Bool {
+        if #available(tvOS 26, *) { return true }
+        return false
+    }
+}
+
+/// A surface in the app's colour, or on glass where the Glass settings ask: frosted (a blur of
+/// what's behind, tinted with the colour) or liquid (the system's Liquid Glass). `panel` marks a
+/// panel or card, which takes glass only with Glass panels on; the navigation takes it from the
+/// surface alone. Read straight from the stored settings, so a panel in a sheet follows them too.
+struct GlassBackground<S: Shape>: View {
+    @AppStorage(GlassSetting.surfaceKey) private var surface = "solid"
+    @AppStorage(GlassSetting.panelsKey) private var panels = false
+    let shape: S
+    let fill: Color
+    var panel = false
+
+    var body: some View {
+        if surface == "solid" || (panel && !panels) {
+            shape.fill(fill)
+        } else if surface == "liquid", GlassSetting.canRefract {
+            liquid
+        } else {
+            frosted
+        }
+    }
+
+    private var frosted: some View {
+        shape.fill(.ultraThinMaterial)
+            .overlay(shape.fill(fill.opacity(0.35)))
+    }
+
+    @ViewBuilder private var liquid: some View {
+        if #available(tvOS 26, *) {
+            // Darkened a little, as the system's own glass is over bright art, so text reads.
+            shape.fill(Color.black.opacity(0.18)).glassEffect(.regular, in: shape)
+        } else {
+            frosted
+        }
+    }
+}

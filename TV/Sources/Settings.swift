@@ -1,4 +1,5 @@
 import AetherEngineFeatures
+import CoreImage.CIFilterBuiltins
 import SwiftUI
 
 // Settings that follow the user, kept where the web app keeps them: its synced settings in
@@ -39,6 +40,27 @@ final class Preferences: ObservableObject {
     // MARK: Synced settings
 
     func text(_ key: String, _ fallback: String) -> String { custom[key] ?? fallback }
+
+    /// Where Live TV shows, as the web app's setting: on home and in the navigation (`home`), in the
+    /// navigation only (`nav`), or hidden (`off`), when channels also leave search.
+    var liveTv: String { text("liveTv", "home") }
+
+    /// The pages the background from artwork shows behind (the web app's `artBackground`): `item`
+    /// for title pages, `browse` for Home, search and catalogs, `other` for the rest. Title pages
+    /// where nothing is set; an earlier "1" was everywhere.
+    var artPages: [String] {
+        let all = ["item", "browse", "other"]
+        guard let raw = custom["artBackground"] else { return ["item"] }
+        if raw == "1" { return all }
+        let parts = raw.split(separator: ",").map(String.init)
+        return all.filter(parts.contains)
+    }
+
+    func setArtPages(_ pages: [String]) {
+        let ordered = ["item", "browse", "other"].filter(pages.contains)
+        let value = ordered == ["item"] ? nil : ordered.isEmpty ? "none" : ordered.joined(separator: ",")
+        set("artBackground", value, fallback: "")
+    }
     func flag(_ key: String, _ fallback: Bool) -> Bool { custom[key].map { $0 == "1" } ?? fallback }
     func number(_ key: String, _ fallback: Double) -> Double { custom[key].flatMap(Double.init) ?? fallback }
 
@@ -173,6 +195,17 @@ final class Preferences: ObservableObject {
     @Published var liveMatchFrameRate: Bool = UserDefaults.standard.object(forKey: "live.matchFrameRate") as? Bool ?? true {
         didSet { UserDefaults.standard.set(liveMatchFrameRate, forKey: "live.matchFrameRate") }
     }
+    /// HDR10 tone mapping's target, the TV's peak in nits; 0 is off (AetherEngine's videoProcessing).
+    @Published var toneMapNits: Int = UserDefaults.standard.integer(forKey: "video.toneMapNits") {
+        didSet { UserDefaults.standard.set(toneMapNits, forKey: "video.toneMapNits") }
+    }
+    /// The Glass settings (the web app's Theme > Glass), kept on this Apple TV.
+    @Published var glassSurface: String = UserDefaults.standard.string(forKey: GlassSetting.surfaceKey) ?? "solid" {
+        didSet { UserDefaults.standard.set(glassSurface, forKey: GlassSetting.surfaceKey) }
+    }
+    @Published var glassPanels: Bool = UserDefaults.standard.bool(forKey: GlassSetting.panelsKey) {
+        didSet { UserDefaults.standard.set(glassPanels, forKey: GlassSetting.panelsKey) }
+    }
     @Published var liveMatchDynamicRange: Bool = UserDefaults.standard.object(forKey: "live.matchDynamicRange") as? Bool ?? true {
         didSet { UserDefaults.standard.set(liveMatchDynamicRange, forKey: "live.matchDynamicRange") }
     }
@@ -261,10 +294,6 @@ final class Preferences: ObservableObject {
     /// The time of day in the player's top corner.
     @Published var showClock: Bool = UserDefaults.standard.object(forKey: "controls.clock") as? Bool ?? true {
         didSet { UserDefaults.standard.set(showClock, forKey: "controls.clock") }
-    }
-    /// Pausing and skipping bring the controls up.
-    @Published var showOnPauseAndSkip: Bool = UserDefaults.standard.object(forKey: "controls.showOnPauseAndSkip") as? Bool ?? true {
-        didSet { UserDefaults.standard.set(showOnPauseAndSkip, forKey: "controls.showOnPauseAndSkip") }
     }
 
     /// What the player needs of these, read as it starts.
@@ -411,6 +440,9 @@ struct SettingsView: View {
     @State private var approving = false
 
     @State private var page: SettingsPage
+    @State private var donating = false
+    /// The server has Live TV, which its setting only shows with.
+    @State private var hasLiveTv = false
     @FocusState private var tab: SettingsPage?
 
     /// You in the navigation opens Account; Settings opens Playback.
@@ -445,6 +477,11 @@ struct SettingsView: View {
         .focusScope(settingsScope)
         .ignoresSafeArea()
         .task { await loadFeaturedOptions() }
+        .task {
+            guard let client = session.client, let userId = session.userId else { return }
+            let views: ItemsResult? = try? await client.get("/UserViews", ["userId": userId])
+            hasLiveTv = views?.items?.contains { $0.collectionType == "livetv" } == true
+        }
         .task { if !DemoMode.active { newer = await UpdateCheck.newer() } }
         .task {
             guard let client = session.client else { return }
@@ -464,6 +501,10 @@ struct SettingsView: View {
             MultiChooserPanel(chooser: picker) { self.picker = nil }
                 .presentationBackground(.clear)
         }
+        .fullScreenCover(isPresented: $donating) {
+            DonatePanel { donating = false }
+                .presentationBackground(.clear)
+        }
     }
 
     @ViewBuilder private func pageContent(_ page: SettingsPage) -> some View {
@@ -478,7 +519,7 @@ struct SettingsView: View {
                     }
                 }
             }
-            section(nil, note: L("Saved to your account, so the web app and your other devices use them too.")) {
+            section(L("Versions"), note: L("Saved to your account, so the web app and your other devices use them too.")) {
                 toggle(L("Auto-play the first version"), key: "autoPlayFirst", fallback: false)
                 toggle(L("Find versions when a title opens"), key: "preloadVersions", fallback: false)
                 note(L("Looks for versions as soon as a title's page opens, so Play and the version list don't wait. Each title you open is looked up, even if you don't play it."))
@@ -509,7 +550,8 @@ struct SettingsView: View {
                        options: [(L("Never"), "0")] + [2, 3, 4, 5, 8].map { (L("After %ld episodes", $0), String($0)) })
                 note(L("The next episode plays in the version that matches the one you're watching. Where none does, the first plays, or with that off, the versions are listed. Back hides the offer."))
             }
-            section(L("Player controls"), note: L("Kept on this Apple TV.")) {
+        case .player:
+            section(L("Controls"), note: L("Kept on this Apple TV.")) {
                 row(L("Skip step"), value: L("%ld seconds", prefs.seekStep)) {
                     chooser = Chooser(title: L("Skip step"), options: [5, 10, 15, 30].map { (L("%ld seconds", $0), String($0)) },
                                       current: String(prefs.seekStep)) { prefs.seekStep = Int($0) ?? 10 }
@@ -522,9 +564,6 @@ struct SettingsView: View {
                 }
                 note(L("How fast playback runs while you hold Select on the video."))
                 row(L("Seek bar previews"), value: prefs.seekPreviews ? L("On") : L("Off")) { prefs.seekPreviews.toggle() }
-                row(L("Show the controls on pause and skip"), value: prefs.showOnPauseAndSkip ? L("On") : L("Off")) {
-                    prefs.showOnPauseAndSkip.toggle()
-                }
             }
             section(L("Live TV"), note: L("Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on.")) {
                 row(L("Match frame rate"), value: prefs.liveMatchFrameRate ? L("On") : L("Off")) { prefs.liveMatchFrameRate.toggle() }
@@ -536,6 +575,12 @@ struct SettingsView: View {
                     prefs.animeUpscaling.toggle()
                 }
                 note(L("Anime up to 1080p is upscaled for your TV with Anime4K's line-art network, for sharper lines. Applies to titles with an anime database id, and only to SDR video. Changes take effect from the next title."))
+                row(L("HDR10 tone mapping"), value: nitsName(prefs.toneMapNits)) {
+                    chooser = Chooser(title: L("HDR10 tone mapping"),
+                                      options: [0, 400, 600, 800, 1000, 1500, 2000].map { (nitsName($0), String($0)) },
+                                      current: String(prefs.toneMapNits)) { prefs.toneMapNits = Int($0) ?? 0 }
+                }
+                note(L("For a TV dimmer than the film: HDR10 brighter than the peak you choose is rolled off by the app, so highlights keep their detail, and the TV is told not to dim it again. Pick your TV's peak brightness. Needs tvOS 26; Dolby Vision, HLG and SDR are left as they are. A title it maps has no Picture in Picture, and Atmos in Dolby Digital Plus plays without its heights."))
             }
         case .audio:
             // The web app's Audio and Subtitles pages: the account's languages and track choice.
@@ -640,7 +685,7 @@ struct SettingsView: View {
                     .padding(Theme.px(12))
             }
         case .interface:
-            section(nil, note: nil) {
+            section(L("Navigation"), note: L("Kept on this Apple TV.")) {
                 row(L("Navigation"), value: prefs.tvNavigation == "top" ? L("Top bar") : L("Rail")) {
                     chooser = Chooser(title: L("Navigation"), options: [(L("Rail"), "rail"), (L("Top bar"), "top")],
                                       current: prefs.tvNavigation) { prefs.tvNavigation = $0 }
@@ -652,30 +697,12 @@ struct SettingsView: View {
                         current: prefs.startPage
                     ) { prefs.startPage = $0 }
                 }
-                toggle(L("Merge continue watching and next up"), key: "mergeNextUp", fallback: false)
-                row(L("Card previews"), value: prefs.cardPreviews ? L("On") : L("Off")) { prefs.cardPreviews.toggle() }
-                if prefs.cardPreviews {
-                    row(L("Trailers in card previews"), value: prefs.cardTrailers ? L("On") : L("Off")) { prefs.cardTrailers.toggle() }
-                    row(L("Trailer sound"), value: prefs.trailerSound ? L("On") : L("Off")) { prefs.trailerSound.toggle() }
-                }
-                toggle(L("Combine movie and show results"), key: "combineSearch", fallback: false)
-                toggle(L("Blur episodes you haven't started"), key: "blurSpoilers", fallback: false)
-                row(L("Featured on home"), value: featuredLabel) { chooseFeatured() }
-                synced(L("Hero"), key: "heroMode", fallback: "rotate",
-                       options: [(L("Rotates through featured titles"), "rotate"), (L("Follows the selected card"), "follow"),
-                                 (L("Follows the selected card, compact"), "corner")])
-                synced(L("Poster size"), key: "posterSize", fallback: "medium",
-                       options: [(L("Small"), "small"), (L("Medium"), "medium"), (L("Large"), "large")])
-                synced(L("Poster text"), key: "posterText", fallback: "title,year",
-                       options: [(L("Title and year"), "title,year"), (L("Title"), "title"), (L("Year"), "year"), (L("None"), "none")])
                 row(L("Prevent accidental exit"), value: prefs.preventAccidentalExit ? L("On") : L("Off")) {
                     prefs.preventAccidentalExit.toggle()
                 }
                 note(prefs.preventAccidentalExit
                     ? L("Back on Home shows “Press Back again to leave”, and only a second press leaves the app.")
                     : L("Back on Home leaves the app straight away."))
-                synced(L("Hero turns every"), key: "heroSeconds", fallback: "9",
-                       options: [5, 7, 9, 12, 15, 20, 30].map { (L("%ld seconds", $0), String($0)) })
             }
             // The web app's Language card: its language and clock, synced.
             section(L("Language"), note: L("Titles, synopses and version names stay in the language the server sends.")) {
@@ -686,16 +713,68 @@ struct SettingsView: View {
                 synced(L("Time format"), key: "timeFormat", fallback: "auto",
                        options: [(L("Automatic"), "auto"), (L("12-hour"), "12"), (L("24-hour"), "24")])
             }
+        case .browsing:
+            section(L("Home"), note: L("Shared with the web app.")) {
+                row(L("Featured on home"), value: featuredLabel) { chooseFeatured() }
+                synced(L("Hero"), key: "heroMode", fallback: "rotate",
+                       options: [(L("Rotates through featured titles"), "rotate"), (L("Follows the selected card"), "follow"),
+                                 (L("Follows the selected card, compact"), "corner")])
+                synced(L("Hero turns every"), key: "heroSeconds", fallback: "9",
+                       options: [5, 7, 9, 12, 15, 20, 30].map { (L("%ld seconds", $0), String($0)) })
+                toggle(L("Merge continue watching and next up"), key: "mergeNextUp", fallback: false)
+                if hasLiveTv {
+                    synced(L("Live TV"), key: "liveTv", fallback: "home",
+                           options: [(L("On home and in the navigation"), "home"), (L("In the navigation only"), "nav"),
+                                     (L("Hidden"), "off")])
+                    note(L("Hidden, channels also leave search and favourites."))
+                }
+            }
+            section(L("Posters and grids"), note: nil) {
+                synced(L("Poster size"), key: "posterSize", fallback: "medium",
+                       options: [(L("Small"), "small"), (L("Medium"), "medium"), (L("Large"), "large")])
+                synced(L("Poster text"), key: "posterText", fallback: "title,year",
+                       options: [(L("Title and year"), "title,year"), (L("Title"), "title"), (L("Year"), "year"), (L("None"), "none")])
+                toggle(L("Combine movie and show results"), key: "combineSearch", fallback: false)
+                row(L("Card previews"), value: prefs.cardPreviews ? L("On") : L("Off")) { prefs.cardPreviews.toggle() }
+                if prefs.cardPreviews {
+                    row(L("Trailers in card previews"), value: prefs.cardTrailers ? L("On") : L("Off")) { prefs.cardTrailers.toggle() }
+                    row(L("Trailer sound"), value: prefs.trailerSound ? L("On") : L("Off")) { prefs.trailerSound.toggle() }
+                }
+            }
+            section(L("Episodes"), note: nil) {
+                toggle(L("Blur episodes you haven't started"), key: "blurSpoilers", fallback: false)
+            }
         case .theme:
             section(nil, note: L("Shared with the web app.")) {
                 synced(L("Accent colour"), key: "accentColor", fallback: "",
                        options: [(L("Default"), ""), (L("Blue"), "#3b82f6"), (L("Sky"), "#0ea5e9"), (L("Teal"), "#14b8a6"),
                                  (L("Green"), "#22c55e"), (L("Amber"), "#f59e0b"), (L("Orange"), "#f97316"), (L("Red"), "#ef4444"),
                                  (L("Pink"), "#ec4899"), (L("Violet"), "#8b5cf6")])
-                toggle(L("Background from artwork"), key: "artBackground", fallback: false)
+                row(L("Background from artwork"), value: artPagesLabel) {
+                    picker = MultiChooser(
+                        title: L("Background from artwork"),
+                        note: L("The artwork of the title you're on, blurred and darkened, behind these pages. The version list shows it with title pages."),
+                        options: Self.artPageOptions,
+                        chosen: prefs.artPages
+                    ) { prefs.setArtPages($0) }
+                }
                 synced(L("Background"), key: "backgroundColor", fallback: "",
                        options: [(L("Default"), ""), (L("Black"), "#000000"), (L("Charcoal"), "#1c1c1f"), (L("Slate"), "#1e2836"),
                                  (L("Navy"), "#0a1846"), (L("Plum"), "#24102e"), (L("Forest"), "#0c2018"), (L("Maroon"), "#2a0c12")])
+            }
+            section(L("Glass"), note: L("Kept on this Apple TV.")) {
+                row(L("Glass surface"), value: glassName(prefs.glassSurface == "liquid" && !GlassSetting.canRefract ? "frosted" : prefs.glassSurface)) {
+                    chooser = Chooser(
+                        title: L("Glass surface"),
+                        options: (["solid", "frosted"] + (GlassSetting.canRefract ? ["liquid"] : [])).map { (glassName($0), $0) },
+                        current: prefs.glassSurface
+                    ) { prefs.glassSurface = $0 }
+                }
+                note(L("What the navigation, and glass panels over the artwork, sit on: the app's own colour, or glass that shows the page through it. Liquid glass also bends what's behind the navigation's edges, which costs more on a slow device."))
+                if !prefs.artPages.isEmpty && prefs.glassSurface != "solid" {
+                    row(L("Glass panels"), value: prefs.glassPanels ? L("On") : L("Off")) { prefs.glassPanels.toggle() }
+                    note(L("Menus, lists, fields and cards over the artwork sit on the glass surface instead of its colour. Slower devices can feel the extra drawing."))
+                }
             }
         case .account:
             section(nil, note: nil) {
@@ -726,6 +805,13 @@ struct SettingsView: View {
                 note(L("Sends this Apple TV's details and the app's recent log to your server, where whoever runs it finds them among its logs. Passwords and tokens are left out."))
                 note(L("An unofficial app, not affiliated with AIOStreams or AetherEngine. AGPL-3.0; AetherEngine is LGPL-3.0, FFmpeg LGPL-2.1+, libdovi and Anime4K (Copyright (c) 2019-2021 bloc97) MIT, and the Inter font is under the SIL Open Font License."))
             }
+            // The web app's About links, each as a code to scan, as a TV opens no web pages.
+            section(nil, note: nil) {
+                LinkRow(name: L("Source code"), help: L("Where the app is made, and where to report a problem."),
+                        url: "https://github.com/wizaarddlabs/aiostreams-ios")
+                LinkRow(name: L("Documentation"), help: L("How to use the app and what each setting does."),
+                        url: "https://aiostreams.org/apps")
+            }
         }
     }
 
@@ -734,8 +820,16 @@ struct SettingsView: View {
     /// The pages down the side, in the web app's two cards, Watching and App. Moving onto one opens it.
     private var tabs: some View {
         VStack(alignment: .leading, spacing: Theme.px(12)) {
-            tabGroup(L("Watching"), SettingsPage.allCases.filter(\.watching))
-            tabGroup(L("App"), SettingsPage.allCases.filter { !$0.watching })
+            tabGroup(L("Watching"), SettingsPage.allCases.filter { $0.group == 0 })
+            tabGroup(L("Look and feel"), SettingsPage.allCases.filter { $0.group == 1 })
+            tabGroup(L("App"), SettingsPage.allCases.filter { $0.group == 2 })
+            // As the web app's, below the tabs: its links, here as codes to scan.
+            Button { donating = true } label: {
+                Label(L("Donate"), systemImage: "heart")
+                    .font(Theme.font(Theme.sm, .medium))
+            }
+            .buttonStyle(SoftPillStyle())
+            .frame(maxWidth: .infinity)
         }
         .focusSection()
         .onChange(of: tab) { _, focused in if let focused { page = focused } }
@@ -970,6 +1064,26 @@ struct SettingsView: View {
         rate.formatted(.number.precision(.fractionLength(0...1)).locale(AppLanguage.locale))
     }
 
+    static var artPageOptions: [(label: String, value: String)] {
+        [(L("Title pages"), "item"), (L("Home, search and catalogs"), "browse"), (L("Other pages, such as settings"), "other")]
+    }
+
+    private var artPagesLabel: String {
+        let pages = prefs.artPages
+        if pages.isEmpty { return L("Nowhere") }
+        return Self.artPageOptions.filter { pages.contains($0.value) }.map(\.label).joined(separator: ", ")
+    }
+
+    private func glassName(_ value: String) -> String {
+        switch value {
+        case "frosted": return L("Frosted glass")
+        case "liquid": return L("Liquid glass")
+        default: return L("Solid")
+        }
+    }
+
+    private func nitsName(_ nits: Int) -> String { nits == 0 ? L("Off") : L("%@ nits", String(nits)) }
+
     private func boostName(_ db: Int) -> String { db == 0 ? L("Off") : L("+%@ dB", String(db)) }
 
     private func delayName(_ ms: Int) -> String {
@@ -993,17 +1107,26 @@ struct SettingsView: View {
 
 /// The settings' pages, as the web app's settings tabs, in its Watching and App groups.
 enum SettingsPage: String, CaseIterable, Identifiable {
-    case playback, audio, subtitles, interface, theme, account, about
+    case playback, player, audio, subtitles, interface, browsing, theme, account, about
 
     var id: String { rawValue }
-    var watching: Bool { self == .playback || self == .audio || self == .subtitles }
+    /// The web app's groups: Watching, Look and feel, App.
+    var group: Int {
+        switch self {
+        case .playback, .player, .audio, .subtitles: return 0
+        case .interface, .browsing, .theme: return 1
+        case .account, .about: return 2
+        }
+    }
 
     var name: String {
         switch self {
         case .playback: return L("Playback")
+        case .player: return L("Player")
         case .audio: return L("Audio")
         case .subtitles: return L("Subtitles")
         case .interface: return L("Interface")
+        case .browsing: return L("Browsing")
         case .theme: return L("Theme")
         case .account: return L("Account")
         case .about: return L("About")
@@ -1012,10 +1135,12 @@ enum SettingsPage: String, CaseIterable, Identifiable {
 
     var detail: String {
         switch self {
-        case .playback: return L("Next episode, controls and players")
+        case .playback: return L("Versions, next episode and skipping")
+        case .player: return L("The player, its controls and video")
         case .audio: return L("Language and output")
         case .subtitles: return L("Language and how subtitles look")
-        case .interface: return L("Language, home, grids and episodes")
+        case .interface: return L("Language and navigation")
+        case .browsing: return L("Home, posters, trailers and episodes")
         case .theme: return L("Colours and background")
         case .account: return L("Who you are signed in as")
         case .about: return L("Versions and links")
@@ -1025,9 +1150,11 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .playback: return "play.circle"
+        case .player: return "play.rectangle"
         case .audio: return "speaker.wave.2"
         case .subtitles: return "captions.bubble"
         case .interface: return "square.grid.2x2"
+        case .browsing: return "rectangle.stack"
         case .theme: return "paintpalette"
         case .account: return "person"
         case .about: return "info.circle"
@@ -1043,8 +1170,8 @@ extension ContainerValues {
 /// The web app's settings card: nearly black, with a faint edge.
 private struct SettingsCardShape: View {
     var body: some View {
-        RoundedRectangle(cornerRadius: Theme.px(14), style: .continuous)
-            .fill(Color(red: 3 / 255, green: 7 / 255, blue: 18 / 255).opacity(0.7))
+        GlassBackground(shape: RoundedRectangle(cornerRadius: Theme.px(14), style: .continuous),
+                        fill: Color(red: 3 / 255, green: 7 / 255, blue: 18 / 255).opacity(0.7), panel: true)
             .overlay(RoundedRectangle(cornerRadius: Theme.px(14), style: .continuous)
                 .stroke(Color.white.opacity(0.1), lineWidth: Theme.px(1)))
     }
@@ -1064,6 +1191,86 @@ private struct SettingsTabStyle: ButtonStyle {
                 )
                 .opacity(configuration.isPressed ? 0.8 : 1)
         }
+    }
+}
+
+/// A link as a code to scan with a phone, with its address beside it, since a TV opens no web pages.
+enum QRCode {
+    static func image(_ text: String) -> UIImage? {
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(text.utf8)
+        filter.correctionLevel = "M"
+        guard let output = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 12, y: 12)),
+              let image = CIContext().createCGImage(output, from: output.extent) else { return nil }
+        return UIImage(cgImage: image)
+    }
+}
+
+struct QRCodeView: View {
+    let url: String
+    var size: CGFloat = Theme.px(112)
+
+    var body: some View {
+        Group {
+            if let image = QRCode.image(url) {
+                Image(uiImage: image).interpolation(.none).resizable().scaledToFit()
+            }
+        }
+        .frame(width: size, height: size)
+        .padding(Theme.px(8))
+        .background(RoundedRectangle(cornerRadius: Theme.px(10), style: .continuous).fill(.white))
+    }
+}
+
+/// One of About's links: its name, what it's for and its address, with a code to scan. It takes
+/// focus, so the page scrolls to it, though there's nothing to open.
+private struct LinkRow: View {
+    let name: String
+    let help: String
+    let url: String
+
+    var body: some View {
+        Button {} label: {
+            HStack(spacing: Theme.px(16)) {
+                VStack(alignment: .leading, spacing: Theme.px(4)) {
+                    Text(name).font(Theme.font(Theme.base, .semibold))
+                    Text(help).font(Theme.font(Theme.sm)).foregroundStyle(Theme.gray400)
+                    Text(verbatim: url).font(Theme.font(Theme.xs)).foregroundStyle(Theme.gray500)
+                }
+                Spacer(minLength: Theme.px(16))
+                QRCodeView(url: url, size: Theme.px(88))
+            }
+            .padding(Theme.px(12))
+        }
+        .buttonStyle(RowStyle(radius: Theme.px(10)))
+    }
+}
+
+/// The web app's Donate, for AIOStreams' developer: GitHub Sponsors and Ko-fi as codes to scan.
+private struct DonatePanel: View {
+    let done: () -> Void
+    private static let links = [("GitHub Sponsors", "https://github.com/sponsors/Viren070"), ("Ko-fi", "https://ko-fi.com/Viren070")]
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.75).ignoresSafeArea()
+            VStack(spacing: Theme.px(24)) {
+                Text(L("Donate")).font(Theme.font(Theme.xl, .semibold))
+                HStack(spacing: Theme.px(48)) {
+                    ForEach(Self.links, id: \.0) { link in
+                        VStack(spacing: Theme.px(10)) {
+                            QRCodeView(url: link.1, size: Theme.px(160))
+                            Text(verbatim: link.0).font(Theme.font(Theme.base, .semibold))
+                            Text(verbatim: link.1).font(Theme.font(Theme.sm)).foregroundStyle(Theme.gray400)
+                        }
+                    }
+                }
+                Button(L("Close"), action: done).buttonStyle(SoftPillStyle())
+            }
+            .padding(Theme.px(40))
+            .background(SettingsCardShape())
+        }
+        .onExitCommand(perform: done)
     }
 }
 
@@ -1149,7 +1356,8 @@ struct MultiChooserPanel: View {
             .padding(Theme.px(20))
             .frame(width: Theme.px(520))
             .frame(maxHeight: Theme.px(640))
-            .background(RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous).fill(Color(white: 17 / 255)))
+            .background(GlassBackground(shape: RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous),
+                                        fill: Color(white: 17 / 255), panel: true))
             .overlay(RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous).stroke(.white.opacity(0.1), lineWidth: Theme.px(1)))
         }
         .foregroundStyle(.white)
@@ -1200,7 +1408,8 @@ private struct ChooserPanel: View {
             .padding(Theme.px(20))
             .frame(width: Theme.px(480))
             .frame(maxHeight: Theme.px(600))
-            .background(RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous).fill(Color(white: 17 / 255)))
+            .background(GlassBackground(shape: RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous),
+                                        fill: Color(white: 17 / 255), panel: true))
             .overlay(RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous).stroke(.white.opacity(0.1), lineWidth: Theme.px(1)))
         }
         .foregroundStyle(.white)
@@ -1249,7 +1458,8 @@ private struct QuickConnectApproval: View {
             }
             .padding(Theme.px(24))
             .frame(width: Theme.px(520), alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous).fill(Color(white: 17 / 255)))
+            .background(GlassBackground(shape: RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous),
+                                        fill: Color(white: 17 / 255), panel: true))
             .overlay(RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous).stroke(.white.opacity(0.1), lineWidth: Theme.px(1)))
         }
         .foregroundStyle(.white)
