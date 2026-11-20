@@ -113,6 +113,17 @@ jobs:
           python3 scripts/altstore-source.py build/releases.json "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" \
             build/AIOStreams.ipa build/altstore.json
           gh release upload "$GITHUB_REF_NAME" build/altstore.json --clobber
+          # And on the altstore branch, whose raw address always holds the last complete source:
+          # releases/latest points at a new release before its build attaches the file above, and
+          # a source added meanwhile reads GitHub's error page ("not valid JSON").
+          if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/altstore" >/dev/null 2>&1; then
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref=refs/heads/altstore -f sha="$GITHUB_SHA" >/dev/null
+          fi
+          current=$(gh api "repos/$GITHUB_REPOSITORY/contents/altstore.json?ref=altstore" --jq .sha 2>/dev/null || true)
+          gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/altstore.json" \
+            -f branch=altstore -f message="AltStore source for $GITHUB_REF_NAME" \
+            -f content="$(base64 < build/altstore.json | tr -d '\n')" \
+            ${current:+-f sha="$current"} >/dev/null
 
       # Khan AIOStreams: every push to main publishes its IPAs as a release, for atvloadly to install.
       # Made with the workflow's own token, so it starts no further runs.

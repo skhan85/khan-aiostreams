@@ -91,7 +91,8 @@ struct ReminderHost: View {
                 }
                 .padding(Theme.px(24))
                 .frame(width: Theme.px(520), alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous).fill(Color(white: 17 / 255)))
+                .background(GlassBackground(shape: RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous),
+                                        fill: Color(white: 17 / 255), panel: true))
                 .overlay(RoundedRectangle(cornerRadius: Theme.px(16), style: .continuous).stroke(.white.opacity(0.1), lineWidth: Theme.px(1)))
                 .focusSection()
                 .onAppear { focused = true }

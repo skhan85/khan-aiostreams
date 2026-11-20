@@ -74,10 +74,10 @@ The app's version comes from the release tags: a build of the commit tagged `v0.
 **AltStore and SideStore.** Add this source to get the iPhone and iPad app and its updates in the app:
 
 ```
-https://github.com/wizaarddlabs/aiostreams-ios/releases/latest/download/altstore.json
+https://raw.githubusercontent.com/wizaarddlabs/aiostreams-ios/altstore/altstore.json
 ```
 
-Each release attaches it, listing every release from v0.2.10 on. Apple TV isn't in it: neither installs on tvOS.
+It's kept on the `altstore` branch, updated once each release's IPAs are attached (each release also attaches it), listing every release from v0.2.10 on. Apple TV isn't in it: neither installs on tvOS.
 
 The IPA is unsigned. Sign it when you install it with AltStore, SideStore, Sideloadly, or your own developer certificate. With a free Apple ID, apps expire after 7 days and must be refreshed.
 

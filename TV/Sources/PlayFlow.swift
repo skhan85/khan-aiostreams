@@ -198,7 +198,8 @@ struct PlayFlow: ViewModifier {
         // Named again, the version brings its subtitles from the configuration's subtitle addons.
         var chosen = source
         var playSession = info?.playSessionId
-        if let named = try? await client.playbackInfo(userId: userId, itemId: choice.item.id, sourceId: source.ownId),
+        if let named = try? await client.playbackInfo(userId: userId, itemId: choice.item.id, sourceId: source.ownId,
+                                                      addonSubtitles: choice.item.isChannel),
            let match = named.mediaSources?.first(where: { $0.ownId == source.ownId }) ?? named.mediaSources?.first {
             chosen = match
             playSession = named.playSessionId ?? playSession

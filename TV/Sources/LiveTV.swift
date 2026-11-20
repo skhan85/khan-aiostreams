@@ -31,6 +31,14 @@ struct LiveTVView: View {
     /// Programmes by channel, from the half hour before now to six hours on.
     @State private var schedules: [String: [Item]] = [:]
     @State private var now = Date()
+    /// The guide's day, from today: earlier days for catch-up, as far back as the server's guide goes.
+    @State private var day = 0
+    /// The days the server's guide covers (/LiveTv/GuideInfo), back as far as channels keep programmes.
+    @State private var guideRange: (from: Date, to: Date)?
+    /// The earliest programme the server keeps for the listed channels, for catch-up: a server's
+    /// guide info can start today while its channels keep days of programmes behind.
+    @State private var pastFrom: Date?
+    @State private var lookedBack = false
     @State private var choice: VersionChoice?
 
     private static let page = 100
@@ -60,6 +68,12 @@ struct LiveTVView: View {
         .edgeToEdge()
         .playFlow($choice)
         .task { await loadGroups() }
+        .task { await loadGuideRange() }
+        // Another day: its programmes, for the channels already listed.
+        .onChange(of: day) { _, _ in
+            schedules = [:]
+            Task { await loadSchedules(for: channels.map(\.id)) }
+        }
         .task(id: group) { await reload() }
         .task {
             while !Task.isCancelled {
@@ -103,6 +117,19 @@ struct LiveTVView: View {
                     .buttonStyle(SoftPillStyle(selected: !guide))
                 Button { setGuide(true) } label: { Label(L("Guide"), systemImage: "calendar.day.timeline.left") }
                     .buttonStyle(SoftPillStyle(selected: guide))
+                if guide && dayOffsets.count > 1 {
+                    // The day the guide shows, as the web app's day picker.
+                    Menu {
+                        ForEach(dayOffsets, id: \.self) { offset in
+                            Button { day = offset } label: {
+                                if offset == day { Label(dayName(offset), systemImage: "checkmark") } else { Text(dayName(offset)) }
+                            }
+                        }
+                    } label: {
+                        Label(dayName(day), systemImage: "calendar")
+                    }
+                    .buttonStyle(SoftPillStyle(selected: day != 0))
+                }
                 Rectangle().fill(.white.opacity(0.15)).frame(width: Theme.px(1), height: Theme.px(24))
                     .padding(.horizontal, Theme.px(8))
                 ForEach(groups) { item in
@@ -186,21 +213,82 @@ struct LiveTVView: View {
         guard asked == group else { return }
         channels += found
         loaded = true
+        if !lookedBack {
+            lookedBack = true
+            Task { await findPastRange(Array(found.prefix(20)).map(\.id)) }
+        }
         await loadSchedules(for: found.map(\.id))
     }
 
-    /// The window the guide shows: two hours back, for programmes a channel keeps, to six on.
+    /// The window the guide shows: the chosen day, midnight to midnight, as the web app's guide;
+    /// today runs at least six hours on from now, past midnight late in the evening.
     private var window: (start: Date, end: Date) {
-        let step = 30.0 * 60
-        let halfHour = Date(timeIntervalSince1970: (now.timeIntervalSince1970 / step).rounded(.down) * step)
-        let start = halfHour.addingTimeInterval(-GuideView.hoursBack * 3600)
-        return (start, halfHour.addingTimeInterval(6 * 3600))
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: now)
+        let start = calendar.date(byAdding: .day, value: day, to: today) ?? today
+        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86_400)
+        return (start, day == 0 ? max(end, now.addingTimeInterval(6 * 3600)) : end)
+    }
+
+    /// Days from today the guide covers: back to the server's first, on to its last (a week where
+    /// it doesn't say), as the web app's `dayOffsets`.
+    private var dayOffsets: [Int] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: now)
+        let days = { (from: Date, to: Date) in calendar.dateComponents([.day], from: from, to: to).day ?? 0 }
+        var back = 0, ahead = 7
+        if let range = guideRange {
+            if range.from < today { back = days(calendar.startOfDay(for: range.from), today) }
+            if range.to > today { ahead = max(1, days(today, range.to)) }
+        }
+        if let pastFrom, pastFrom < today { back = max(back, days(calendar.startOfDay(for: pastFrom), today)) }
+        return Array(-back..<ahead)
+    }
+
+    private func dayName(_ offset: Int) -> String {
+        switch offset {
+        case 0: return L("Today")
+        case 1: return L("Tomorrow")
+        case -1: return L("Yesterday")
+        default:
+            let date = Calendar.current.date(byAdding: .day, value: offset, to: Calendar.current.startOfDay(for: now)) ?? now
+            return date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).locale(AppLanguage.locale))
+        }
+    }
+
+    /// How far back the channels' programmes go, up to a month: the earliest the server returns
+    /// for the first channels listed, so catch-up reaches the days the provider keeps.
+    private func findPastRange(_ ids: [String]) async {
+        guard !ids.isEmpty, let client = session.client, let userId = session.userId else { return }
+        let iso = ISO8601DateFormatter()
+        let today = Calendar.current.startOfDay(for: Date())
+        let result: ItemsResult? = try? await client.post("/LiveTv/Programs", body: [
+            "UserId": userId,
+            "ChannelIds": ids,
+            "MinEndDate": iso.string(from: today.addingTimeInterval(-31 * 86_400)),
+            "MaxStartDate": iso.string(from: today),
+            "SortBy": ["StartDate"],
+            "Limit": 1,
+        ])
+        pastFrom = result?.items?.compactMap(\.starts).min()
+    }
+
+    private func loadGuideRange() async {
+        guard let client = session.client else { return }
+        struct GuideInfo: Decodable {
+            let startDate: String?
+            let endDate: String?
+        }
+        guard let info: GuideInfo = try? await client.get("/LiveTv/GuideInfo"),
+              let from = parseDate(info.startDate), let to = parseDate(info.endDate) else { return }
+        guideRange = (from, to)
     }
 
     private func loadSchedules(for ids: [String]) async {
         guard !ids.isEmpty, let client = session.client, let userId = session.userId else { return }
         let iso = ISO8601DateFormatter()
         let (start, end) = window
+        let asked = day
         for batch in stride(from: 0, to: ids.count, by: 50).map({ Array(ids[$0..<min($0 + 50, ids.count)]) }) {
             let result: ItemsResult? = try? await client.post("/LiveTv/Programs", body: [
                 "UserId": userId,
@@ -210,6 +298,7 @@ struct LiveTVView: View {
                 "SortBy": ["StartDate"],
                 "Fields": ["Overview", "Genres"],
             ])
+            guard asked == day else { return }
             for programme in result?.items ?? [] {
                 guard let channel = programme.channelId else { continue }
                 schedules[channel, default: []].append(programme)
@@ -382,9 +471,6 @@ private struct GuideView: View {
     /// Where the grid is scrolled: half an hour before now as it opens, once the window is known.
     @State private var scroll = ScrollPosition(edge: .leading)
 
-    /// How far back the guide reaches, for catch-up; it opens at now.
-    static let hoursBack: Double = 2
-
     static let minute = Theme.px(4)
     static let rowHeight = Theme.px(56)
     static let gap = Theme.px(4)
@@ -397,8 +483,11 @@ private struct GuideView: View {
 
     private var layout: GuideLayout { GuideLayout(window: window) }
 
+    /// Opens at the time of day it is now, half an hour back: now, today; the same hour another day.
     private func openAtNow() {
-        scroll.scrollTo(point: CGPoint(x: max(0, layout.x(now) - 30 * Self.minute), y: scrolled.offset.y))
+        let intoDay = now.timeIntervalSince(Calendar.current.startOfDay(for: now))
+        let at = layout.x(window.start.addingTimeInterval(intoDay))
+        scroll.scrollTo(point: CGPoint(x: max(0, at - 30 * Self.minute), y: scrolled.offset.y))
     }
 
     /// Scrolls a channel down the side fully into sight, as the grid's rows go with it.
@@ -430,7 +519,7 @@ private struct GuideView: View {
                     LazyVStack(alignment: .leading, spacing: Self.gap) {
                         ForEach(Array(channels.enumerated()), id: \.element.id) { index, channel in
                             GuideRow(channel: channel, programmes: schedules[channel.id] ?? [], layout: layout, now: now,
-                                     focus: focus, play: play, playFromStart: playFromStart)
+                                     focus: focus, scrolled: scrolled, play: play, playFromStart: playFromStart)
                                 .onAppear { if index >= channels.count - 10 { more() } }
                         }
                     }
@@ -519,7 +608,9 @@ private struct GuideTimes: View {
                     .fixedSize()
                     .offset(x: layout.x(time) + Theme.px(4))
             }
-            Rectangle().fill(Theme.ring).frame(width: Theme.px(2), height: GuideView.timesHeight).offset(x: layout.x(now))
+            if now >= window.start && now < window.end {
+                Rectangle().fill(Theme.ring).frame(width: Theme.px(2), height: GuideView.timesHeight).offset(x: layout.x(now))
+            }
         }
         .frame(width: layout.width, height: GuideView.timesHeight, alignment: .topLeading)
         .offset(x: -scrolled.offset.x)
@@ -582,6 +673,20 @@ private struct GuideChannel: View {
     }
 }
 
+/// "No guide for this channel", kept beside the channels wherever the guide is scrolled to.
+private struct GuideEmptyLabel: View {
+    @ObservedObject var scrolled: GuideScroll
+
+    var body: some View {
+        Text(L("No guide for this channel"))
+            .font(Theme.font(Theme.sm))
+            .foregroundStyle(Theme.gray500)
+            .padding(.horizontal, Theme.px(12))
+            .frame(height: GuideView.rowHeight)
+            .offset(x: max(0, scrolled.offset.x))
+    }
+}
+
 /// One channel's programmes across the guide.
 private struct GuideRow: View {
     @EnvironmentObject private var prefs: Preferences
@@ -591,6 +696,7 @@ private struct GuideRow: View {
     let layout: GuideLayout
     let now: Date
     let focus: GuideFocus
+    let scrolled: GuideScroll
     let play: (Item) -> Void
     let playFromStart: (Item) -> Void
 
@@ -624,11 +730,7 @@ private struct GuideRow: View {
                 .fill(.white.opacity(0.02))
                 .frame(width: layout.width, height: GuideView.rowHeight)
             if segments.isEmpty {
-                Text(L("No guide for this channel"))
-                    .font(Theme.font(Theme.sm))
-                    .foregroundStyle(Theme.gray500)
-                    .padding(.horizontal, Theme.px(12))
-                    .frame(height: GuideView.rowHeight)
+                GuideEmptyLabel(scrolled: scrolled)
             }
             HStack(spacing: 0) {
                 ForEach(segments, id: \.id) { segment in

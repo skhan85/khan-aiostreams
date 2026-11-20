@@ -98,7 +98,7 @@ struct HomeView: View {
                 if !merging && !nextUp.isEmpty {
                     WideRow(title: L("Next up"), items: nextUp, play: play) { EmptyView() }
                 }
-                if !channels.isEmpty {
+                if !channels.isEmpty && prefs.liveTv == "home" {
                     LiveRow(channels: channels, airing: airing, play: playChannel) {
                         Button { openPlace(.live) } label: {
                             Label(L("All channels"), systemImage: "play.tv")
@@ -383,7 +383,7 @@ struct HeroCarousel: View {
     }
 
     /// Over the background from artwork, the art fades out rather than under the page's colour.
-    private var overArtwork: Bool { prefs.flag("artBackground", false) }
+    private var overArtwork: Bool { prefs.artPages.contains("browse") }
 
     /// A narrow, invisible stop beside the buttons that turns the hero when focus reaches it.
     private func slip(_ action: HeroAction, enabled: Bool) -> some View {

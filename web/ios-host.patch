@@ -1,5 +1,5 @@
 diff --git a/packages/web/src/app/settings/about.tsx b/packages/web/src/app/settings/about.tsx
-index e41938f9..d8ffaba2 100644
+index ec7c7539..9ae886ef 100644
 --- a/packages/web/src/app/settings/about.tsx
 +++ b/packages/web/src/app/settings/about.tsx
 @@ -59,7 +59,11 @@ export function AboutSection() {
@@ -15,6 +15,71 @@ index e41938f9..d8ffaba2 100644
              shell.app,
            ],
            ...(shell.player && !shell.mpv
+diff --git a/packages/web/src/app/settings/downloads.tsx b/packages/web/src/app/settings/downloads.tsx
+index 15b81ad2..78a73050 100644
+--- a/packages/web/src/app/settings/downloads.tsx
++++ b/packages/web/src/app/settings/downloads.tsx
+@@ -100,7 +100,8 @@ export function DownloadsSection() {
+           onValueChange={setSubtitles}
+         />
+       )}
+-      {currentHost().name === 'android-app' && (
++      {/* The iOS app's queue keeps to Wi-Fi as Android's does, so it offers the switch too. */}
++      {['android-app', 'ios-app'].includes(currentHost().name) && (
+         <Switch
+           side="right"
+           label={t`Only on Wi-Fi`}
+diff --git a/packages/web/src/features/trailers/preview.tsx b/packages/web/src/features/trailers/preview.tsx
+index a2c187d4..69f04e8b 100644
+--- a/packages/web/src/features/trailers/preview.tsx
++++ b/packages/web/src/features/trailers/preview.tsx
+@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
+ import { useReducedMotion } from 'motion/react';
+ import { cn } from '@aiostreams/ui/core/styling';
+ import { useSession } from '@/lib/jellyfin/session';
++import { usePlaybackPrefs } from '@/lib/jellyfin/user-config';
+ import { useItem } from '@/lib/jellyfin/queries';
+ import { currentHost } from '@/lib/hosts';
+ import { settings, useSetting, type TrailerSpot } from '@/lib/settings';
+@@ -441,12 +442,16 @@ function PlayedPreview({
+   const [fit] = useSetting(settings.video.fit);
+   // Without it, the app's player keeps the last style it was sent.
+   const [subtitleStyle] = useSetting(settings.subtitle.style);
++  // The account's subtitle mode and languages, as the trailer page plays with: drawn once the
++  // preview opens full screen, where it shows subtitles (iOS app).
++  const { prefs } = usePlaybackPrefs();
+   const player = usePlayer(engines, {
+     client,
+     item,
+     url,
+     source,
+     subtitleStyle,
++    prefs,
+     startMs: 0,
+     onEnded,
+     fit: full ? undefined : 'crop',
+diff --git a/packages/web/src/lib/artwork/shrink.ts b/packages/web/src/lib/artwork/shrink.ts
+index e16a28a3..8e724dc9 100644
+--- a/packages/web/src/lib/artwork/shrink.ts
++++ b/packages/web/src/lib/artwork/shrink.ts
+@@ -16,7 +16,17 @@ export type Shrunk =
+ const fits = (entry: Drawn, width: number, height: number) =>
+   entry.width >= width && entry.height >= height && entry.width <= width * 1.5;
+ 
++/**
++ * iOS app: shrinking Home's artwork in workers ends WebKit's page process within a second of
++ * opening it, and the page reloads over and over (seen on iOS 27.2.1, and in Safari, while Brave,
++ * which keeps pages off OffscreenCanvas, loads it). Plain images there.
++ */
++const iosWebKit = /\b(?:iPhone|iPad|CPU) OS \d+_/.test(
++  typeof navigator === 'undefined' ? '' : navigator.userAgent
++);
++
+ export const canShrink =
++  !iosWebKit &&
+   typeof Worker === 'function' &&
+   typeof OffscreenCanvas === 'function' &&
+   typeof createImageBitmap === 'function';
 diff --git a/packages/web/src/lib/downloads/index.ts b/packages/web/src/lib/downloads/index.ts
 index c7d13569..6b991f63 100644
 --- a/packages/web/src/lib/downloads/index.ts
@@ -87,10 +152,10 @@ index c7d13569..6b991f63 100644
          {
            id: download.id,
 diff --git a/packages/web/src/lib/hosts/shell/bridge.ts b/packages/web/src/lib/hosts/shell/bridge.ts
-index 39f60cb8..f18c1eb0 100644
+index e83de7ec..d0f732d7 100644
 --- a/packages/web/src/lib/hosts/shell/bridge.ts
 +++ b/packages/web/src/lib/hosts/shell/bridge.ts
-@@ -188,7 +188,7 @@ export type MediaKey =
+@@ -190,7 +190,7 @@ export type MediaKey =
  interface ShellBridge {
    protocol: number;
    version: string;
@@ -134,22 +199,26 @@ index 0c2fe1b2..6de9d177 100644
  }
 diff --git a/packages/web/src/lib/hosts/shell/ios.ts b/packages/web/src/lib/hosts/shell/ios.ts
 new file mode 100644
-index 00000000..d54fa59b
+index 00000000..2bcc5bfa
 --- /dev/null
 +++ b/packages/web/src/lib/hosts/shell/ios.ts
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,52 @@
 +import type { Host } from '..';
 +import { appBridge, ask } from './bridge';
 +import { appEngine } from './player';
++import { backGesture, backPressed } from './back-slide';
 +import { resolveYouTube } from './youtube';
 +import { shellDownloads } from './downloads';
 +
 +let fullscreen = false;
 +
-+/** Follows the iOS app's full screen, which hides the status bar and turns to landscape. */
++/** Follows the iOS app's full screen, which hides the status bar and turns to landscape, and takes its back swipes. */
 +export function setupIos(): () => void {
 +  const unsubscribe = appBridge()?.subscribe((m) => {
 +    if (m.type === 'fullscreen') fullscreen = m.value;
++    // A swipe in from the screen's edge slides the page back, as on Android.
++    else if (m.type === 'back') backPressed();
++    else if (m.type === 'back-gesture') backGesture(m);
 +  });
 +  return () => unsubscribe?.();
 +}
@@ -186,6 +255,27 @@ index 00000000..d54fa59b
 +      appBridge()?.send({ type: 'set-level', level: 'brightness', value: null }),
 +  },
 +};
+diff --git a/packages/web/src/lib/hosts/shell/player.ts b/packages/web/src/lib/hosts/shell/player.ts
+index b60589db..bf6594ab 100644
+--- a/packages/web/src/lib/hosts/shell/player.ts
++++ b/packages/web/src/lib/hosts/shell/player.ts
+@@ -31,6 +31,7 @@ import {
+   type VideoFrame,
+ } from '@/lib/playback/engine';
+ import { audioCodes } from '@/lib/playback/track-picks';
++import { subtitleTypes } from '@/lib/subtitles/tracks';
+ import { currentHost } from '..';
+ import { appBridge, type AppTrack, type ShellMessage } from './bridge';
+ import { exoStats } from './exo-stats';
+@@ -133,6 +134,8 @@ export const appEngine: EngineFactory = (emit, { launched }) => {
+       append,
+       audioLanguages: audioCodes(prefs, played.source),
+       subtitleLanguages: subtitleLanguages(prefs),
++      // The user's subtitle types in order, for subtitles the app picks itself (iOS app).
++      subtitleTypes: subtitleTypes(prefs),
+       // eslint-disable-next-line lingui/no-unlocalized-strings -- Jellyfin's name
+       subtitleMode: SUBTITLE_MODES[prefs.SubtitleMode ?? 'Default'],
+     });
 diff --git a/packages/web/src/lib/jellyfin/client.ts b/packages/web/src/lib/jellyfin/client.ts
 index 03c7dded..030e75e5 100644
 --- a/packages/web/src/lib/jellyfin/client.ts

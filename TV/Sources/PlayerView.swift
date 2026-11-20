@@ -104,16 +104,25 @@ final class PlayerModel: ObservableObject {
     private var audioStreamIndex: Int32?
     private let speakers: SpatialSpeakerLayout?
     private let animeUpscaling: Bool
+    /// HDR10 tone mapping's target in nits, 0 for off.
+    private let toneMapNits: Int
     private let rules: PlayerRules
     /// The server's segments, before the file's chapters are weighed against them.
     private var serverSegments: [MediaSegment] = []
     private let userId: String?
+    /// The audio's language the subtitles were picked against, for those that arrive later.
+    private var heardLanguage: String?
+    /// Addon subtitles asked for once the title plays, by the server's stream index, with their tracks.
+    private var laterStreams: [MediaStream] = []
+    private var laterTrackIDs: [Int: Int] = [:]
+    /// A subtitle chosen in the player or by a remote, which a later pick leaves alone.
+    private var subtitleChosen = false
 
     init(request: PlayRequest, client: JellyfinClient, tracks: TrackRules = TrackRules(), baseTracks: TrackRules = TrackRules(),
          remember: (audio: Bool, subtitles: Bool) = (true, true), audioShaping: AudioShaping = AudioShaping(),
          audioDelay: Double = 0,
          liveDisplay: (rate: Bool, range: Bool) = (true, true),
-         look: SubtitleLook = SubtitleLook(), speakers: SpatialSpeakerLayout? = .l714, animeUpscaling: Bool = false,
+         look: SubtitleLook = SubtitleLook(), speakers: SpatialSpeakerLayout? = .l714, animeUpscaling: Bool = false, toneMapNits: Int = 0,
          userId: String? = nil, rules: PlayerRules = PlayerRules()) {
         self.request = request
         isLive = request.source.isInfiniteStream == true || request.item.isChannel
@@ -126,6 +135,7 @@ final class PlayerModel: ObservableObject {
         self.liveDisplay = liveDisplay
         self.speakers = speakers
         self.animeUpscaling = animeUpscaling
+        self.toneMapNits = toneMapNits
         self.rules = rules
         self.userId = userId
         engine = SharedEngine.engine
@@ -147,6 +157,15 @@ final class PlayerModel: ObservableObject {
                 case .ended: self.finished = true
                 case .error(let message):
                     AppLog.warn("player", "error: \(message)")
+                    // An origin that answers byte ranges with other bytes, as IPTV catch-up archives
+                    // do: once more, read straight through from its start (AE#958).
+                    if self.engine.errorInfo?.kind == .sourceFabricatesRanges, !self.sequential, !self.stopped {
+                        AppLog.warn("player", "origin fabricates ranges; loading again as sequential")
+                        self.sequential = true
+                        self.loadTask = nil
+                        self.start()
+                        return
+                    }
                     self.failure = message
                 default: break
                 }
@@ -187,14 +206,36 @@ final class PlayerModel: ObservableObject {
             .store(in: &bag)
     }
 
+    /// Read straight through, from byte 0 only: a catch-up programme, whose archive answers byte
+    /// ranges with other bytes, or a source the engine found doing so. No seeking within it.
+    private var sequential = false
+
+    /// A programme a channel keeps, played from its start.
+    private var isCatchUp: Bool {
+        request.item.type == "Program" || (request.item.channelId != nil && !request.item.isChannel)
+    }
+
+    /// The title's length, which a sequential read can't measure by itself.
+    private var declaredDuration: Double? {
+        if let ticks = request.item.runTimeTicks, ticks > 0 { return Double(ticks) / 10_000_000 }
+        if let start = request.item.starts, let end = request.item.ends, end > start { return end.timeIntervalSince(start) }
+        return nil
+    }
+
     func start() {
         guard loadTask == nil else { return }
+        if isCatchUp, !isLive { sequential = true }
         guard let url = client.streamURL(itemId: request.item.id, source: request.source) else {
             failure = L("This version has no address to play.")
             return
         }
         var options = LoadOptions()
         options.httpHeaders = request.source.requiredHttpHeaders ?? [:]
+        // IPTV panels can refuse a player library's own user agent: a live stream that names none
+        // is sent VLC's, as the official apps' players send it (the web app's `liveHeaders`).
+        if isLive, !options.httpHeaders.keys.contains(where: { $0.caseInsensitiveCompare("User-Agent") == .orderedSame }) {
+            options.httpHeaders["User-Agent"] = "VLC/3.0.21 LibVLC/3.0.21"
+        }
         // The engine writes the display criteria itself, following the Apple TV's Match Content setting.
         options.matchContentEnabled = Self.window?.avDisplayManager.isDisplayCriteriaMatchingEnabled ?? true
         // Serves Dolby Vision profile 8 as profile 5 on a TV without Dolby Vision; ignored on one with it.
@@ -209,6 +250,7 @@ final class PlayerModel: ObservableObject {
         audioStreamIndex = audio?.index.map(Int32.init)
         let heard = (audio ?? streams.first { $0.type == "Audio" && $0.isDefault == true }
                      ?? streams.first { $0.type == "Audio" })?.language
+        heardLanguage = heard
         if streams.contains(where: { $0.type == "Subtitle" }) {
             options.preferredSubtitleLanguages = []
             if let subtitle = tracks.subtitleStream(in: streams, audioLanguage: heard), let index = subtitle.index {
@@ -228,6 +270,14 @@ final class PlayerModel: ObservableObject {
         // as Dolby MAT (tvOS 26 and later); off, they play as their 7.1 channels.
         options.objectAudioRendering = speakers.map { .render($0) } ?? .off
         options.isLive = isLive
+        if sequential, !isLive {
+            options.sequentialOrigin = true
+            options.declaredDurationSeconds = declaredDuration
+        }
+        // HDR10 brighter than the TV is rolled off to its peak (the engine passes the rest by).
+        if toneMapNits > 0, !request.isTrailer {
+            options.videoProcessing = VideoProcessingOptions(targetPeakNits: Double(toneMapNits))
+        }
         if isLive {
             // With either match off, the app writes the TV's mode itself, or leaves it as it is.
             if !(liveDisplay.rate && liveDisplay.range) { options.displayCriteriaOwner = .host }
@@ -248,16 +298,28 @@ final class PlayerModel: ObservableObject {
                     loadOptions.upscaleScaler = .lineArt
                     AppLog.info("player", "anime upscaling on")
                 }
-                let start = self.isLive ? nil : self.request.startMs.map { $0 / 1000 }
+                let start = self.isLive || self.sequential ? nil : self.request.startMs.map { $0 / 1000 }
                 try await self.engine.load(url: url, startPosition: start, options: loadOptions,
                                            audioSourceStreamIndex: self.audioStreamIndex)
+                // A channel whose sound the engine's own reader identified none of plays silent there:
+                // once more on AVPlayer, which reads the live playlist itself.
+                if self.isLive, !loadOptions.nativeRemoteHLS, self.engine.videoRoute != .remoteBypass,
+                   !self.engine.audioTracks.isEmpty, self.engine.audioTracks.allSatisfy({ $0.channels <= 0 }) {
+                    AppLog.warn("player", "live audio unidentified, loading again on AVPlayer")
+                    loadOptions.nativeRemoteHLS = true
+                    try await self.engine.load(url: url, startPosition: nil, options: loadOptions,
+                                               audioSourceStreamIndex: self.audioStreamIndex)
+                }
                 if self.isLive, self.liveDisplay.rate != self.liveDisplay.range { self.matchLiveDisplay() }
+                // The configuration's subtitle addons, asked for now the title plays rather than before.
+                if !self.isLive, !self.request.isTrailer { Task { [weak self] in await self?.addLaterSubtitles() } }
                 // A watch party's title waits for the group to start it; anything else plays.
                 if let entry = self.request.partyEntry {
                     self.party = PartyFollower(model: self, playlistItemId: entry)
                 } else {
                     self.engine.play()
                 }
+                if self.isLive, self.request.partyEntry == nil { self.nudgeIfFrozen() }
                 self.report("/Sessions/Playing")
                 self.progressTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
                     MainActor.assumeIsolated { self?.report("/Sessions/Playing/Progress", event: "TimeUpdate") }
@@ -408,6 +470,47 @@ final class PlayerModel: ObservableObject {
         }
     }
 
+    /// The configuration's subtitle addons' files for this version, asked for once it plays: each
+    /// one new to it becomes a track, and where the settings would pick one of them and nothing was
+    /// chosen meanwhile, it shows.
+    private func addLaterSubtitles() async {
+        guard let userId,
+              let named = try? await client.playbackInfo(userId: userId, itemId: request.item.id,
+                                                         sourceId: request.source.ownId, addonSubtitles: true),
+              let match = named.mediaSources?.first(where: { $0.ownId == request.source.ownId }) ?? named.mediaSources?.first,
+              !stopped else { return }
+        let known = Set(serverStreams().compactMap(\.deliveryUrl))
+        let fresh = (match.mediaStreams ?? []).filter { stream in
+            stream.type == "Subtitle" && stream.isExternal == true
+                && stream.deliveryUrl.map { !known.contains($0) && client.absolute($0) != nil } == true
+        }
+        guard !fresh.isEmpty else { return }
+        let shownBefore = engine.activeSubtitleTrackIndex
+        for stream in fresh {
+            guard let address = stream.deliveryUrl, let url = client.absolute(address) else { continue }
+            let track = engine.addExternalSubtitleTrack(ExternalSubtitleTrack(
+                url: url, name: stream.displayTitle ?? stream.title, language: stream.language,
+                isForced: stream.isForced ?? false, httpHeaders: [:]))
+            laterStreams.append(stream)
+            if let index = stream.index { laterTrackIDs[index] = track.id }
+        }
+        AppLog.info("player", "\(fresh.count) addon subtitles added")
+        // Adding a track can make the engine pick by language; the settings' own pick decides.
+        guard !subtitleChosen, !["None", "OnlyForced"].contains(tracks.subtitleMode) else {
+            if engine.activeSubtitleTrackIndex != shownBefore {
+                if let shownBefore { engine.selectSubtitleTrack(index: shownBefore) } else { engine.clearSubtitle() }
+            }
+            return
+        }
+        let all = (request.source.mediaStreams ?? []) + fresh
+        if let pick = tracks.subtitleStream(in: all, audioLanguage: heardLanguage),
+           let index = pick.index, fresh.contains(where: { $0.index == index }), let id = laterTrackIDs[index] {
+            engine.selectSubtitleTrack(index: id)
+        } else if engine.activeSubtitleTrackIndex != shownBefore {
+            if let shownBefore { engine.selectSubtitleTrack(index: shownBefore) } else { engine.clearSubtitle() }
+        }
+    }
+
     /// The configuration's subtitle addons' files, registered as tracks the user can pick.
     private func serverSubtitles() -> [ExternalSubtitleTrack] {
         serverStreams().compactMap { stream in
@@ -471,6 +574,21 @@ final class PlayerModel: ObservableObject {
         let rate = liveDisplay.rate ? Float(engine.sourceVideoFrameRate ?? Double(current)) : current
         manager.preferredDisplayCriteria = AVDisplayCriteria(refreshRate: rate, formatDescription: description)
         wroteCriteria = true
+    }
+
+    /// A channel that loads but doesn't move a few seconds later is paused and played once, which
+    /// starts most that stall at their first frame.
+    private func nudgeIfFrozen() {
+        let from = position
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(6))
+            guard let self, !self.stopped, !self.paused, self.position - from < 1 else { return }
+            AppLog.warn("player", "live channel moved \(self.position - from) s in 6 s; pausing and playing it once")
+            self.engine.pause()
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !self.stopped else { return }
+            self.engine.play()
+        }
     }
 
     /// A seek the party's timeline asks for, past the controls that would ask the group.
@@ -676,12 +794,15 @@ final class PlayerModel: ObservableObject {
         let streams = request.source.mediaStreams ?? []
         if let stream = streams.first(where: { $0.index == index }), stream.isExternal == true {
             if let at = serverStreams().firstIndex(of: stream) { selectSubtitle(AetherEngine.externalSubtitleTrackIDBase + at) }
+        } else if let later = laterTrackIDs[index] {
+            selectSubtitle(later)
         } else if subtitleTracks.contains(where: { $0.id == index }) {
             selectSubtitle(index)
         }
     }
 
     func selectSubtitle(_ id: Int?) {
+        subtitleChosen = true
         if let id { engine.selectSubtitleTrack(index: id) } else { engine.clearSubtitle() }
         if remember.subtitles, let userId {
             let track = id.flatMap { id in subtitleTracks.first { $0.id == id } }

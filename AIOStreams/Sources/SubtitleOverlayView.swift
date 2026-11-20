@@ -129,12 +129,17 @@ final class SubtitleOverlayView: UIView {
             switch cue.body {
             case .image(let image):
                 drawImage(image, in: video, below: line, context: context)
-            case .text(let text):
+            case .text(let raw):
+                // A file's ASS tags in plain text are its instructions, not its words.
+                let (text, alignment) = SubtitleTags.clean(raw)
                 let string = attributed(runs: nil, text: text, height: shownVideo.height)
-                route(string, placement: cue.placement, bottom: &bottomStack, placed: &placed)
+                route(string, placement: cue.placement ?? alignment.map { SubtitleTextPlacement(alignment: $0, position: nil) },
+                      bottom: &bottomStack, placed: &placed)
             case .richText(let runs):
                 let string = attributed(runs: runs, text: nil, height: shownVideo.height)
-                route(string, placement: cue.placement, bottom: &bottomStack, placed: &placed)
+                let alignment = SubtitleTags.clean(runs.map(\.text).joined()).alignment
+                route(string, placement: cue.placement ?? alignment.map { SubtitleTextPlacement(alignment: $0, position: nil) },
+                      bottom: &bottomStack, placed: &placed)
             @unknown default:
                 break
             }
@@ -238,6 +243,8 @@ final class SubtitleOverlayView: UIView {
             attributes[.foregroundColor] = look.color
             result.append(NSAttributedString(string: text, attributes: attributes))
         }
+        // Tags taken out of the line as a whole, as one can fall across a styled run's edge.
+        SubtitleTags.strip(result)
         return result
     }
 
@@ -299,5 +306,50 @@ final class SubtitleOverlayView: UIView {
             frame.origin.y = max(min(frame.minY, video.minY), frame.minY - (frame.maxY - line))
         }
         UIImage(cgImage: image.cgImage).draw(in: frame)
+    }
+}
+
+/// ASS override tags left in a text subtitle, as an SRT made from an ASS file often keeps them:
+/// `{\an8}` and the like are its instructions, never its words. The blocks are taken out, stray
+/// forms whose brace or backslash went missing too (`\an8}`, `an8}` at a line's start), and `\N`
+/// and `\h` become a line break and a space. The last `\anN` is where the line asks to sit (1
+/// bottom left to 9 top right). A backslash can come as the full-width `＼`.
+enum SubtitleTags {
+    private static let tags = try! NSRegularExpression(pattern:
+        #"\{[^{}]*[\\＼][^{}]*\}|\{?[\\＼]+(?:an?\d+|pos\([^)]*\)|move\([^)]*\)|[ibus][01]|fad?e?\([^)]*\))\}?|(?:^|(?<=\s))\{?an\d\}"#)
+    private static let alignment = try! NSRegularExpression(pattern: #"(?:[\\＼]+|\{)an(\d)"#)
+    private static let breaks = try! NSRegularExpression(pattern: #"[\\＼][Nn]"#)
+    private static let hardSpace = try! NSRegularExpression(pattern: #"[\\＼]h"#)
+
+    static func clean(_ text: String) -> (text: String, alignment: Int?) {
+        let line = NSMutableAttributedString(string: text)
+        let found = alignmentOf(text)
+        strip(line)
+        return (line.string.trimmingCharacters(in: .whitespaces), found)
+    }
+
+    static func alignmentOf(_ text: String) -> Int? {
+        let range = NSRange(text.startIndex..., in: text)
+        guard let match = alignment.matches(in: text, range: range).last,
+              let digits = Range(match.range(at: 1), in: text), let value = Int(text[digits]),
+              (1...9).contains(value) else { return nil }
+        return value
+    }
+
+    /// Takes the tags out of a styled line in place, whichever runs they fall across.
+    static func strip(_ line: NSMutableAttributedString) {
+        let text = line.string
+        guard text.contains("\\") || text.contains("＼") || text.contains("{") || text.contains("}") else { return }
+        for match in tags.matches(in: text, range: NSRange(location: 0, length: line.length)).reversed() {
+            line.deleteCharacters(in: match.range)
+        }
+        for match in breaks.matches(in: line.string, range: NSRange(location: 0, length: line.length)).reversed() {
+            line.replaceCharacters(in: match.range, with: "\n")
+        }
+        for match in hardSpace.matches(in: line.string, range: NSRange(location: 0, length: line.length)).reversed() {
+            line.replaceCharacters(in: match.range, with: " ")
+        }
+        // A tag at the start leaves the line's first space behind.
+        while line.length > 0, line.string.first == " " { line.deleteCharacters(in: NSRange(location: 0, length: 1)) }
     }
 }

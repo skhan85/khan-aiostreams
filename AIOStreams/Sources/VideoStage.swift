@@ -109,7 +109,10 @@ final class VideoStage {
         animator?.stopAnimation(true)
         animator = nil
         let shown = active ? frame : nil
-        view.isHidden = !active || shown?.hidden == true
+        // A hidden frame is "under something the page shows over it" (upstream's VideoFrame): the
+        // video still plays in its box, beneath the page, with no hole cut through the page. It
+        // shows where the page is see-through, as a background trailer's hole the page cuts itself.
+        view.isHidden = !active
         let target = shown.flatMap { frame in web.map { container.convert(frame.rect, from: $0) } } ?? container.bounds
         // Full screen it follows the window; framed it stays where the page put it.
         view.autoresizingMask = shown == nil ? [.flexibleWidth, .flexibleHeight] : []

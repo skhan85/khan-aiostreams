@@ -46,6 +46,16 @@ final class PlayerChannel {
     /// Where each added subtitle came from, by its track id.
     private var subtitleURLs: [Int: String] = [:]
     private var subtitleFiles = 0
+    /// The languages a stream's own AVPlayer subtitles are picked from, once, as they arrive.
+    private var nativePickLanguages: [String] = []
+    /// The user's subtitle types, best first (normal, sdh, forced, signs).
+    private var nativePickTypes: [String] = []
+    private var nativePicked = false
+    /// AVPlayer's own subtitle lines, read for the overlay.
+    private lazy var captions = NativeCaptions { [weak self] cues in
+        guard let self, self.engine.videoRoute == .remoteBypass else { return }
+        self.overlay.setCues(cues)
+    }
     private var thumbnailBusy = false
     private var wantedThumbnail: (url: String, positionMs: Double)?
     private var thumbnailCount = 0
@@ -98,7 +108,17 @@ final class PlayerChannel {
             .store(in: &bag)
         Publishers.CombineLatest(engine.$audioTracks, engine.$subtitleTracks)
             .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
-            .sink { [weak self] _, _ in self?.sendTracks() }
+            .sink { [weak self] _, _ in
+                self?.pickNativeSubtitle()
+                self?.sendTracks()
+            }
+            .store(in: &bag)
+        // A stream whose subtitles AVPlayer would draw itself: its lines are read off the item and
+        // drawn in the overlay, in the page's style, AVPlayer's own rendering held back.
+        // Only there: elsewhere AVPlayer's rendering is what Picture in Picture shows.
+        Publishers.CombineLatest(engine.$currentAVPlayerItem, engine.$videoRoute)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] item, route in self?.captions.attach(to: route == .remoteBypass ? item : nil) }
             .store(in: &bag)
         engine.$activeAudioTrackIndex.removeDuplicates()
             .sink { [weak self] index in self?.state(["audio": JSON.id(index)]) }
@@ -196,6 +216,51 @@ final class PlayerChannel {
         if !track.codec.isEmpty { json["codec"] = track.codec }
         if let url = subtitleURLs[track.id] { json["url"] = url }
         return json
+    }
+
+    /// On a remote HLS stream the subtitles are AVPlayer's renditions, listed once its playlist is
+    /// read and left unpicked by the user's languages. With subtitles set to Always, the
+    /// first in the user's languages is picked as they arrive; a choice in the player replaces it.
+    private func pickNativeSubtitle() {
+        guard !nativePicked, !nativePickLanguages.isEmpty, engine.videoRoute == .remoteBypass,
+              !engine.subtitleTracks.isEmpty else { return }
+        nativePicked = true
+        guard engine.activeSubtitleTrackIndex == nil else { return }
+        // The user's types, best first, as the web app ranks them; forced-only tracks never lead.
+        let order = nativePickTypes.isEmpty ? ["normal", "sdh", "forced", "signs"] : nativePickTypes
+        func rank(_ track: TrackInfo) -> Int {
+            let type = Self.subtitleType(track)
+            return type == "forced" ? order.count + 1 : (order.firstIndex(of: type) ?? order.count)
+        }
+        for wanted in nativePickLanguages.map(Self.languageKey) {
+            let matching = engine.subtitleTracks.filter { $0.language.map(Self.languageKey) == wanted }
+            if let track = matching.min(by: { rank($0) < rank($1) }), !track.isForced {
+                AppLog.info("subtitles", "picked the stream's \(track.language ?? "?") \(Self.subtitleType(track)) subtitles")
+                engine.selectSubtitleTrack(index: track.id)
+                return
+            }
+        }
+    }
+
+    /// A track's type as the web app tells them apart: forced, SDH (for the hard of hearing),
+    /// signs and songs, or normal.
+    static func subtitleType(_ track: TrackInfo) -> String {
+        let name = track.name.lowercased()
+        if track.isForced { return "forced" }
+        if track.isHearingImpaired || name.contains("sdh") || name.contains("hearing") || name.contains("cc") { return "sdh" }
+        if name.contains("sign") || name.contains("song") { return "signs" }
+        return "normal"
+    }
+
+    /// A language tag or code as one key, so "en", "eng" and "en-US" match, as do the
+    /// bibliographic codes Jellyfin keeps ("ger") and the terminology ones ("deu").
+    static func languageKey(_ tag: String) -> String {
+        let base = tag.lowercased().split(whereSeparator: { $0 == "-" || $0 == "_" }).first.map(String.init) ?? ""
+        let bibliographic = ["ger": "de", "fre": "fr", "chi": "zh", "dut": "nl", "cze": "cs", "gre": "el", "per": "fa",
+                             "rum": "ro", "slo": "sk", "alb": "sq", "arm": "hy", "baq": "eu", "bur": "my", "geo": "ka",
+                             "ice": "is", "mac": "mk", "mao": "mi", "may": "ms", "tib": "bo", "wel": "cy"]
+        if let code = bibliographic[base] { return code }
+        return Locale.Language(identifier: base).languageCode?.identifier(.alpha2) ?? base
     }
 
     private func sendTracks() {
@@ -327,6 +392,11 @@ final class PlayerChannel {
         if mode == "default" || mode == "always" || mode == "smart" {
             options.preferredSubtitleLanguages = JSON.strings(message["subtitleLanguages"])
         }
+        // A remote HLS stream's subtitles are AVPlayer's own, which arrive after the load and which
+        // the engine leaves unpicked: the first in the user's languages is picked once they do.
+        nativePickLanguages = mode == "always" ? JSON.strings(message["subtitleLanguages"]) : []
+        nativePickTypes = JSON.strings(message["subtitleTypes"])
+        nativePicked = false
 
         generation += 1
         let current = generation
@@ -551,7 +621,8 @@ final class PlayerChannel {
             overlay.gravity = gravity
         }
         if let look = message["subtitles"] as? [String: Any] {
-            overlay.look = SubtitleLook(json: look)
+            let next = SubtitleLook(json: look)
+            if next != overlay.look { overlay.look = next }
         }
     }
 
