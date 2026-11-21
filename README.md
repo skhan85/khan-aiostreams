@@ -79,6 +79,12 @@ https://raw.githubusercontent.com/wizaarddlabs/aiostreams-ios/altstore/altstore.
 
 It's kept on the `altstore` branch, updated once each release's IPAs are attached (each release also attaches it), listing every release from v0.2.10 on. Apple TV isn't in it: neither installs on tvOS.
 
+**Apple TV sideloaders (ATVLoadly, FlareStore).** Add this source for the Apple TV app, in the same format, listing every release's tvOS IPA:
+
+```
+https://raw.githubusercontent.com/wizaarddlabs/aiostreams-ios/altstore/altstore-tvos.json
+```
+
 The IPA is unsigned. Sign it when you install it with AltStore, SideStore, Sideloadly, or your own developer certificate. With a free Apple ID, apps expire after 7 days and must be refreshed.
 
 To run it from Xcode instead, run `scripts/build-web.sh`, then `xcodegen generate`, open `AIOStreams.xcodeproj`, choose your team under Signing, and run it on a device.

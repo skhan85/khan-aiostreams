@@ -1,0 +1,45 @@
+name: Khan release
+
+# Khan AIOStreams: publishes each successful main build's IPAs as a release, for atvloadly.
+# Kept apart from build-ipa.yml (upstream's), so syncing with wizaarddlabs/aiostreams-ios
+# doesn't conflict on it.
+
+on:
+  workflow_run:
+    workflows: ["Build IPA"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: build/artifacts
+      - name: Publish the build release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          version=$(tr -d '[:space:]' < VERSION)
+          number=$(git rev-list --count HEAD)
+          tag="build-$version-$number"
+          mkdir -p build/release
+          cp build/artifacts/AIOStreams-ipa/AIOStreams.ipa "build/release/KhanAIOStreams-$version-$number.ipa"
+          cp build/artifacts/AIOStreams-tvOS-ipa/AIOStreams-tvOS.ipa "build/release/KhanAIOStreams-tvOS-$version-$number.ipa"
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --target "$SHA" --latest \
+            --title "Khan AIOStreams $version ($number)" \
+            --notes "Unsigned IPAs built from ${SHA:0:7}: sign them when you install them (atvloadly for Apple TV)."
+          gh release upload "$tag" build/release/*.ipa --clobber
