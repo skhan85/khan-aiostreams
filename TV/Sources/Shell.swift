@@ -167,6 +167,10 @@ struct MainView: View {
         .animation(.easeOut(duration: 0.2), value: open)
         .playFlow($choice, restoresPictureInPicture: true) { NotificationCenter.default.post(name: .watchStateChanged, object: nil) }
         .task { await findLiveTV() }
+        // Back in the app: the server may have gained or lost channels, or answered nothing at launch.
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            Task { await findLiveTV() }
+        }
         .task { await session.readServerKind() }
         // Signed out, or asked who's watching: other devices can't reach this one meanwhile.
         .onDisappear { ServerEvents.shared.stop() }
@@ -241,9 +245,20 @@ struct MainView: View {
     /// for Live TV on a server without.
     private func findLiveTV() async {
         guard let client = session.client, let userId = session.userId else { return }
-        let views: ItemsResult? = try? await client.get("/UserViews", ["userId": userId])
-        liveView = views?.items?.first { $0.collectionType == "livetv" }
-        if !liveShown && place == .live { place = .home }
+        // A request that fails, as one can while a server starts up after an update, is tried again,
+        // rather than leaving Live TV out until the app is restarted.
+        for wait in [0, 2, 5, 15] {
+            if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
+            guard !Task.isCancelled else { return }
+            do {
+                let views: ItemsResult = try await client.get("/UserViews", ["userId": userId])
+                liveView = views.items?.first { $0.collectionType == "livetv" }
+                if !liveShown && place == .live { place = .home }
+                return
+            } catch {
+                AppLog.warn("live", "libraries didn't load: \(error.localizedDescription)")
+            }
+        }
     }
 
     /// Screenshot mode only: opens the screen the launch asked for.

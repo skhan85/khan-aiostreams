@@ -115,6 +115,11 @@ struct DetailView: View {
             }
             .frame(maxWidth: Theme.px(768), alignment: .leading)
         }
+        // The whole header across the page is one place focus moves up into from the rows below,
+        // from under the poster or the far side of the cast too, landing on its buttons; on its own
+        // the buttons' row only caught a move from straight beneath it.
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .focusSection()
         .pagePadding()
     }
 

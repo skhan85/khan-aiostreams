@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Writes the AltStore / SideStore source for the iPhone and iPad app.
+"""Writes the AltStore / SideStore source for the iPhone and iPad app, or with `tvos` last, the
+AltStore-format source for the Apple TV app, which tvOS sideloaders (ATVLoadly, FlareStore) read.
 
-    scripts/altstore-source.py RELEASES.json OWNER/REPO TAG IPA OUT.json
+    scripts/altstore-source.py RELEASES.json OWNER/REPO TAG IPA OUT.json [tvos]
 
 RELEASES.json is `gh api repos/OWNER/REPO/releases --paginate` (a list, or lists one after another).
 The source lists every published release from v0.2.10 on that has AIOStreams.ipa, newest first:
@@ -16,11 +17,49 @@ import json
 import re
 import sys
 
-ASSET = "AIOStreams.ipa"
 FIRST = (0, 2, 10)
-BUNDLE = "io.github.aiostreams-ios.app"
 MIN_OS = "18.0"
 TINT = "6152DF"
+
+PLATFORMS = {
+    "ios": {
+        "asset": "AIOStreams.ipa",
+        "bundle": "io.github.aiostreams-ios.app",
+        "source": "AIOStreams for iOS",
+        "identifier": "io.github.aiostreams-ios",
+        "subtitle": "An unofficial iPhone and iPad port of AIOStreams.",
+        "description": (
+            "An unofficial iPhone and iPad port of the AIOStreams app. It runs AIOStreams' own "
+            "web app over AetherEngine, with HDR10, HDR10+, Dolby Vision and Atmos, trailers, "
+            "Picture in Picture and downloads. Not affiliated with AIOStreams or AetherEngine."
+        ),
+        "screenshots": ("iphone-home", "iphone-show", "iphone-movie", "iphone-versions"),
+        "entitlements": [],
+        "privacy": {
+            "NSLocalNetworkUsageDescription": "AIOStreams connects to your server and streams on your local network.",
+            "NSMicrophoneUsageDescription": "Voice search in the page's search field uses the microphone.",
+        },
+    },
+    "tvos": {
+        "asset": "AIOStreams-tvOS.ipa",
+        "bundle": "io.github.aiostreams-ios.tv",
+        "source": "AIOStreams for Apple TV",
+        "identifier": "io.github.aiostreams-ios.tv",
+        "subtitle": "An unofficial Apple TV app for AIOStreams.",
+        "description": (
+            "An unofficial native Apple TV app for AIOStreams, built to look and work like the official "
+            "apps, played through AetherEngine: HDR10, HDR10+, Dolby Vision and Atmos, Live TV with a "
+            "guide and catch-up, watch parties, Top Shelf and more. Not affiliated with AIOStreams or "
+            "AetherEngine."
+        ),
+        "screenshots": ("tv-home", "tv-show", "tv-movie", "tv-player"),
+        # Top Shelf shares what's on with the app through this App Group.
+        "entitlements": ["com.apple.security.application-groups"],
+        "privacy": {
+            "NSLocalNetworkUsageDescription": "AIOStreams connects to your server and streams on your local network.",
+        },
+    },
+}
 
 
 def releases_from(path):
@@ -54,6 +93,8 @@ def plain(notes):
 
 def main():
     releases_path, repo, tag, ipa, out = sys.argv[1:6]
+    platform = PLATFORMS[sys.argv[6] if len(sys.argv) > 6 else "ios"]
+    ASSET = platform["asset"]
     raw = f"https://raw.githubusercontent.com/{repo}/main"
 
     data = open(ipa, "rb").read()
@@ -82,37 +123,30 @@ def main():
     versions.sort(key=lambda pair: pair[0], reverse=True)
 
     source = {
-        "name": "AIOStreams for iOS",
-        "identifier": "io.github.aiostreams-ios",
-        "subtitle": "An unofficial iPhone and iPad port of AIOStreams.",
+        "name": platform["source"],
+        "identifier": platform["identifier"],
+        "subtitle": platform["subtitle"],
         "website": f"https://github.com/{repo}",
         "iconURL": f"{raw}/AIOStreams/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
         "tintColor": TINT,
         "apps": [
             {
                 "name": "AIOStreams",
-                "bundleIdentifier": BUNDLE,
+                "bundleIdentifier": platform["bundle"],
                 "developerName": "aiostreams-ios",
                 "subtitle": "Your AIOStreams server, played through AetherEngine.",
-                "localizedDescription": (
-                    "An unofficial iPhone and iPad port of the AIOStreams app. It runs AIOStreams' own "
-                    "web app over AetherEngine, with HDR10, HDR10+, Dolby Vision and Atmos, trailers, "
-                    "Picture in Picture and downloads. Not affiliated with AIOStreams or AetherEngine."
-                ),
+                "localizedDescription": platform["description"],
                 "iconURL": f"{raw}/AIOStreams/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
                 "tintColor": TINT,
                 "category": "entertainment",
                 "screenshots": [
                     f"{raw}/docs/screenshots/{name}.jpg"
-                    for name in ("iphone-home", "iphone-show", "iphone-movie", "iphone-versions")
+                    for name in platform["screenshots"]
                 ],
                 "versions": [entry for _, entry in versions],
                 "appPermissions": {
-                    "entitlements": [],
-                    "privacy": {
-                        "NSLocalNetworkUsageDescription": "AIOStreams connects to your server and streams on your local network.",
-                        "NSMicrophoneUsageDescription": "Voice search in the page's search field uses the microphone.",
-                    },
+                    "entitlements": platform["entitlements"],
+                    "privacy": platform["privacy"],
                 },
             }
         ],
