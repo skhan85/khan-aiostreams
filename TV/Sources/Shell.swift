@@ -112,6 +112,13 @@ struct MainView: View {
             .environment(\.playItem, { item, mode in
                 Task { choice = await playChoice(for: item, session: session, mode: mode) }
             })
+            .environment(\.playItemIn, { item, mode, player in
+                Task {
+                    var picked = await playChoice(for: item, session: session, mode: mode)
+                    picked?.player = player
+                    choice = picked
+                }
+            })
             .padding(.leading, Theme.railInset)
             .padding(.top, Theme.topBarInset)
             .mask { pageEdge }
@@ -169,6 +176,9 @@ struct MainView: View {
         .task { await findLiveTV() }
         // Back in the app: the server may have gained or lost channels, or answered nothing at launch.
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            if ExternalPlayer.consumeExternalReturn() {
+                NotificationCenter.default.post(name: .watchStateChanged, object: nil)
+            }
             Task { await findLiveTV() }
         }
         .task { await session.readServerKind() }
@@ -306,9 +316,26 @@ struct MainView: View {
         }
     }
 
-    /// Opens or plays the title a link names (Top Shelf), from Home.
+    /// Opens or plays the title a link names (Top Shelf), or syncs progress when Infuse returns.
     private func followLink() async {
-        guard let client = session.client, let userId = session.userId, let link = DeepLink.take() else { return }
+        guard let client = session.client, let userId = session.userId else { return }
+        if let returned = DeepLink.takeReturn() {
+            _ = ExternalPlayer.consumeExternalReturn()
+            if let itemId = returned.itemId, let sourceId = returned.sourceId {
+                if returned.finished {
+                    try? await client.call("POST", "/UserPlayedItems/\(itemId)", ["userId": userId])
+                } else if let ms = returned.positionMs, ms > 0 {
+                    await client.fire("/Sessions/Playing/Stopped", body: [
+                        "ItemId": itemId,
+                        "MediaSourceId": sourceId,
+                        "PositionTicks": Int64(ms * JellyfinClient.ticksPerMs),
+                    ])
+                }
+            }
+            NotificationCenter.default.post(name: .watchStateChanged, object: nil)
+            return
+        }
+        guard let link = DeepLink.take() else { return }
         let found: ItemsResult? = try? await client.get("/Items", ["userId": userId, "Ids": link.id, "Fields": "Overview,Genres"])
         guard let item = found?.items?.first else { return }
         place = .home

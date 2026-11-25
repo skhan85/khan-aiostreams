@@ -80,6 +80,7 @@
 "Born %@" = "出生于 %@";
 "Browsing" = "浏览中";
 "Buffered" = "已缓冲";
+"Built-in player" = "内置播放器";
 "Calendar" = "日历";
 "Can't reach the server" = "无法连接到服务器";
 "Cancel" = "取消";
@@ -183,6 +184,7 @@
 "Keep watching" = "继续观看";
 "Kept on this Apple TV." = "保存在此 Apple TV 上。";
 "Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on." = "保存在这台 Apple TV 上。两项均需开启 Apple TV 自身的“匹配内容”设置才会生效。";
+"Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player." = "保存在此 Apple TV 上。预告片、直播频道、一起看以及需要自定义请求头的版本将使用内置播放器播放。";
 "LIVE" = "直播";
 "Language" = "语言";
 "Language and how subtitles look" = "语言与字幕外观";
@@ -276,6 +278,8 @@
 "Pink" = "粉色";
 "Play" = "播放";
 "Play %@" = "播放 %@";
+"Play in Infuse" = "在 Infuse 中播放";
+"Play in built-in player" = "在内置播放器中播放";
 "Play lists the versions to choose from, but resuming goes back to the version you were watching. Hold select on a title and choose Play straight away to start the first." = "播放会列出可选的版本，但继续播放会回到你之前观看的版本。在影片上按住选择键并选择“立即播放”即可开始第一个版本。";
 "Play next" = "播放下一集";
 "Play starts the first version, and resuming goes back to the version you were watching. Hold select on a title and choose Choose a version to pick instead." = "播放会开始第一个版本，继续播放会回到你之前观看的版本。在影片上按住选择键并选择“选择版本”即可自行选择。";
@@ -305,6 +309,7 @@
 "Rating" = "评分";
 "Recaps" = "剧情回顾";
 "Recent" = "最近";
+"Recent servers" = "最近的服务器";
 "Reconnecting…" = "正在重新连接…";
 "Red" = "红色";
 "Release date" = "上映日期";

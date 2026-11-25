@@ -80,6 +80,7 @@
 "Born %@" = "Lahir %@";
 "Browsing" = "Penelusuran";
 "Buffered" = "Buffer";
+"Built-in player" = "Pemutar bawaan";
 "Calendar" = "Kalender";
 "Can't reach the server" = "Tidak dapat terhubung ke server";
 "Cancel" = "Batal";
@@ -183,6 +184,7 @@
 "Keep watching" = "Lanjutkan menonton";
 "Kept on this Apple TV." = "Disimpan di Apple TV ini.";
 "Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on." = "Disimpan di Apple TV ini. Masing-masing berfungsi saat pengaturan Sesuaikan Konten di Apple TV aktif.";
+"Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player." = "Disimpan di Apple TV ini. Cuplikan, saluran langsung, pesta nonton, dan versi yang memerlukan header sendiri diputar di pemutar bawaan.";
 "LIVE" = "LANGSUNG";
 "Language" = "Bahasa";
 "Language and how subtitles look" = "Bahasa dan tampilan subtitel";
@@ -276,6 +278,8 @@
 "Pink" = "Merah muda";
 "Play" = "Putar";
 "Play %@" = "Putar %@";
+"Play in Infuse" = "Putar di Infuse";
+"Play in built-in player" = "Putar di pemutar bawaan";
 "Play lists the versions to choose from, but resuming goes back to the version you were watching. Hold select on a title and choose Play straight away to start the first." = "Putar menampilkan daftar versi untuk dipilih, tetapi melanjutkan kembali ke versi yang sedang kamu tonton. Tahan tombol pilih pada judul dan pilih Langsung putar untuk memulai yang pertama.";
 "Play next" = "Putar berikutnya";
 "Play starts the first version, and resuming goes back to the version you were watching. Hold select on a title and choose Choose a version to pick instead." = "Putar memulai versi pertama, dan melanjutkan kembali ke versi yang sedang kamu tonton. Tahan tombol pilih pada judul dan pilih Pilih versi untuk memilih sendiri.";
@@ -305,6 +309,7 @@
 "Rating" = "Penilaian";
 "Recaps" = "Ringkasan";
 "Recent" = "Terbaru";
+"Recent servers" = "Server terbaru";
 "Reconnecting…" = "Menghubungkan kembali…";
 "Red" = "Merah";
 "Release date" = "Tanggal rilis";

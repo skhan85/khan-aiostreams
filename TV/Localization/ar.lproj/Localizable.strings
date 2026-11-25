@@ -80,6 +80,7 @@
 "Born %@" = "وُلد في %@";
 "Browsing" = "التصفح";
 "Buffered" = "المخزّن مؤقتًا";
+"Built-in player" = "المشغّل المدمج";
 "Calendar" = "التقويم";
 "Can't reach the server" = "تعذّر الوصول إلى الخادم";
 "Cancel" = "إلغاء";
@@ -183,6 +184,7 @@
 "Keep watching" = "متابعة المشاهدة";
 "Kept on this Apple TV." = "محفوظ على جهاز Apple TV هذا.";
 "Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on." = "محفوظ على جهاز Apple TV هذا. يعمل كل منهما عند تشغيل إعداد مطابقة المحتوى في Apple TV.";
+"Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player." = "يُحفظ على جهاز Apple TV هذا. تُشغَّل المقاطع الدعائية والقنوات المباشرة وجلسات المشاهدة الجماعية والإصدارات التي تحتاج إلى ترويسات خاصة في المشغّل المدمج.";
 "LIVE" = "مباشر";
 "Language" = "اللغة";
 "Language and how subtitles look" = "اللغة ومظهر الترجمة";
@@ -276,6 +278,8 @@
 "Pink" = "وردي";
 "Play" = "تشغيل";
 "Play %@" = "تشغيل %@";
+"Play in Infuse" = "التشغيل في Infuse";
+"Play in built-in player" = "التشغيل في المشغّل المدمج";
 "Play lists the versions to choose from, but resuming goes back to the version you were watching. Hold select on a title and choose Play straight away to start the first." = "«تشغيل» يسرد النسخ لتختار منها، لكن الاستئناف يعود إلى النسخة التي كنت تشاهدها. اضغط مطولًا على زر التحديد في عنوان واختر «التشغيل فورًا» لبدء الأولى.";
 "Play next" = "تشغيل التالي";
 "Play starts the first version, and resuming goes back to the version you were watching. Hold select on a title and choose Choose a version to pick instead." = "«تشغيل» يبدأ النسخة الأولى، والاستئناف يعود إلى النسخة التي كنت تشاهدها. اضغط مطولًا على زر التحديد في عنوان واختر «اختر نسخة» لتختار بنفسك.";
@@ -305,6 +309,7 @@
 "Rating" = "التقييم";
 "Recaps" = "الملخصات";
 "Recent" = "الأحدث";
+"Recent servers" = "الخوادم الأخيرة";
 "Reconnecting…" = "جارٍ إعادة الاتصال…";
 "Red" = "أحمر";
 "Release date" = "تاريخ الإصدار";

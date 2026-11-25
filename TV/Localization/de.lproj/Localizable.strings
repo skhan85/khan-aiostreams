@@ -80,6 +80,7 @@
 "Born %@" = "Geboren: %@";
 "Browsing" = "Stöbern";
 "Buffered" = "Gepuffert";
+"Built-in player" = "Integrierter Player";
 "Calendar" = "Kalender";
 "Can't reach the server" = "Server nicht erreichbar";
 "Cancel" = "Abbrechen";
@@ -183,6 +184,7 @@
 "Keep watching" = "Weiterschauen";
 "Kept on this Apple TV." = "Auf diesem Apple TV gespeichert.";
 "Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on." = "Auf diesem Apple TV gespeichert. Beides wirkt, wenn „Inhalt anpassen“ auf dem Apple TV aktiviert ist.";
+"Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player." = "Wird auf diesem Apple TV gespeichert. Trailer, Live-Sender, Watch-Partys und Versionen mit eigenen Headern werden im integrierten Player abgespielt.";
 "LIVE" = "LIVE";
 "Language" = "Sprache";
 "Language and how subtitles look" = "Sprache & Untertitel-Darstellung";
@@ -276,6 +278,8 @@
 "Pink" = "Rosa";
 "Play" = "Abspielen";
 "Play %@" = "%@ abspielen";
+"Play in Infuse" = "In Infuse abspielen";
+"Play in built-in player" = "Im integrierten Player abspielen";
 "Play lists the versions to choose from, but resuming goes back to the version you were watching. Hold select on a title and choose Play straight away to start the first." = "Abspielen listet die Versionen zur Auswahl auf, aber Fortsetzen kehrt zu der Version zurück, die du geschaut hast. Halte auf einem Titel die Auswahltaste gedrückt und wähle „Sofort abspielen“, um die erste zu starten.";
 "Play next" = "Nächste abspielen";
 "Play starts the first version, and resuming goes back to the version you were watching. Hold select on a title and choose Choose a version to pick instead." = "Abspielen startet die erste Version, und Fortsetzen kehrt zu der Version zurück, die du geschaut hast. Halte auf einem Titel die Auswahltaste gedrückt und wähle „Version auswählen“, um stattdessen zu wählen.";
@@ -305,6 +309,7 @@
 "Rating" = "Bewertung";
 "Recaps" = "Rückblicke";
 "Recent" = "Zuletzt gesehen";
+"Recent servers" = "Letzte Server";
 "Reconnecting…" = "Verbindung wird wiederhergestellt…";
 "Red" = "Rot";
 "Release date" = "Erscheinungsdatum";

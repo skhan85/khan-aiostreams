@@ -43,3 +43,19 @@ jobs:
             --title "Khan AIOStreams $version ($number)" \
             --notes "Unsigned IPAs built from ${SHA:0:7}: sign them when you install them (atvloadly for Apple TV)."
           gh release upload "$tag" build/release/*.ipa --clobber
+          gh api "repos/$GITHUB_REPOSITORY/releases" --paginate > build/releases.json
+          python3 scripts/altstore-source.py build/releases.json "$GITHUB_REPOSITORY" "$tag" \
+            "build/release/KhanAIOStreams-$version-$number.ipa" build/altstore.json
+          python3 scripts/altstore-source.py build/releases.json "$GITHUB_REPOSITORY" "$tag" \
+            "build/release/KhanAIOStreams-tvOS-$version-$number.ipa" build/altstore-tvos.json tvos
+          gh release upload "$tag" build/altstore.json build/altstore-tvos.json --clobber
+          if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/altstore" >/dev/null 2>&1; then
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref=refs/heads/altstore -f sha="$SHA" >/dev/null
+          fi
+          for file in altstore.json altstore-tvos.json; do
+            current=$(gh api "repos/$GITHUB_REPOSITORY/contents/$file?ref=altstore" --jq .sha 2>/dev/null || true)
+            gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/$file" \
+              -f branch=altstore -f message="$file for $tag" \
+              -f content="$(base64 < "build/$file" | tr -d '\n')" \
+              ${current:+-f sha="$current"} >/dev/null
+          done

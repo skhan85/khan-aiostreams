@@ -84,10 +84,11 @@ enum AppLog {
 /// A newer release of the app, from the GitHub releases its IPAs are published to; sideloaded
 /// copies don't update themselves, so the app says when there's one.
 enum UpdateCheck {
-    static let page = URL(string: "https://github.com/wizaarddlabs/aiostreams-ios/releases/latest")!
-    private static let api = URL(string: "https://api.github.com/repos/wizaarddlabs/aiostreams-ios/releases/latest")!
+    static let page = URL(string: "https://github.com/skhan85/khan-aiostreams/releases/latest")!
+    private static let api = URL(string: "https://api.github.com/repos/skhan85/khan-aiostreams/releases/latest")!
 
-    /// The latest release's version, where it's newer than this copy.
+    /// The latest release's version, where it's newer than this copy. Supports `build-X.Y.Z-N`
+    /// releases from `khan-release.yml` as well as `vX.Y.Z` tags.
     static func newer() async -> String? {
         var request = URLRequest(url: api)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
@@ -95,8 +96,19 @@ enum UpdateCheck {
         guard let (data, _) = try? await URLSession.shared.data(for: request),
               let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
               let tag = json["tag_name"] as? String else { return nil }
+        let info = Bundle.main.infoDictionary
+        let current = info?["CFBundleShortVersionString"] as? String ?? "0"
+        let currentBuild = Int(info?["CFBundleVersion"] as? String ?? "0") ?? 0
+        if tag.hasPrefix("build-") {
+            let parts = tag.dropFirst(6).split(separator: "-", maxSplits: 1)
+            guard parts.count == 2, let build = Int(parts[1]) else { return nil }
+            let latest = String(parts[0])
+            let order = latest.compare(current, options: .numeric)
+            if order == .orderedDescending { return "\(latest) (\(build))" }
+            if order == .orderedSame && build > currentBuild { return "\(latest) (\(build))" }
+            return nil
+        }
         let latest = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
-        let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
         return latest.compare(current, options: .numeric) == .orderedDescending ? latest : nil
     }
 }

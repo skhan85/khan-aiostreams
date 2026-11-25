@@ -80,6 +80,7 @@
 "Born %@" = "Né(e) le %@";
 "Browsing" = "Navigation";
 "Buffered" = "En mémoire tampon";
+"Built-in player" = "Lecteur intégré";
 "Calendar" = "Calendrier";
 "Can't reach the server" = "Impossible de joindre le serveur";
 "Cancel" = "Annuler";
@@ -183,6 +184,7 @@
 "Keep watching" = "Continuer à regarder";
 "Kept on this Apple TV." = "Conservé sur cette Apple TV.";
 "Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on." = "Enregistré sur cet Apple TV. Chacun fonctionne avec le réglage Adapter le contenu de l’Apple TV activé.";
+"Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player." = "Conservé sur cet Apple TV. Les bandes-annonces, les chaînes en direct, les watch parties et les versions nécessitant leurs propres en-têtes sont lus dans le lecteur intégré.";
 "LIVE" = "EN DIRECT";
 "Language" = "Langue";
 "Language and how subtitles look" = "Langue et apparence des sous-titres";
@@ -276,6 +278,8 @@
 "Pink" = "Rose";
 "Play" = "Lecture";
 "Play %@" = "Lire %@";
+"Play in Infuse" = "Lire dans Infuse";
+"Play in built-in player" = "Lire dans le lecteur intégré";
 "Play lists the versions to choose from, but resuming goes back to the version you were watching. Hold select on a title and choose Play straight away to start the first." = "Lecture liste les versions au choix, mais la reprise revient à la version que vous regardiez. Maintenez la sélection sur un titre et choisissez Lire immédiatement pour démarrer la première.";
 "Play next" = "Lire la suite";
 "Play starts the first version, and resuming goes back to the version you were watching. Hold select on a title and choose Choose a version to pick instead." = "Lecture démarre la première version, et la reprise revient à la version que vous regardiez. Maintenez la sélection sur un titre et choisissez Choisir une version pour choisir vous-même.";
@@ -305,6 +309,7 @@
 "Rating" = "Note";
 "Recaps" = "Résumés";
 "Recent" = "Récentes";
+"Recent servers" = "Serveurs récents";
 "Reconnecting…" = "Reconnexion en cours…";
 "Red" = "Rouge";
 "Release date" = "Date de sortie";

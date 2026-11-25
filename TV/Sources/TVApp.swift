@@ -83,6 +83,8 @@ struct ServerView: View {
     @State private var working = false
     @State private var error: String?
 
+    private var recentServers: [Session.SavedServer] { Session.serverHistory }
+
     var body: some View {
         ZStack {
             WelcomeBackground()
@@ -107,6 +109,24 @@ struct ServerView: View {
                 Button(working ? L("Connecting…") : L("Connect"), action: connect)
                     .buttonStyle(PrimaryPillStyle())
                     .disabled(working || address.trimmingCharacters(in: .whitespaces).isEmpty)
+                if !recentServers.isEmpty {
+                    VStack(spacing: Theme.px(10)) {
+                        Text(L("Recent servers"))
+                            .font(Theme.font(Theme.xs, .semibold))
+                            .foregroundStyle(Theme.gray400)
+                        HStack(spacing: Theme.px(12)) {
+                            ForEach(recentServers.prefix(3)) { saved in
+                                Button(saved.name ?? URL(string: saved.address)?.host ?? saved.address) {
+                                    address = saved.address
+                                    connect()
+                                }
+                                .buttonStyle(SoftPillStyle())
+                                .disabled(working)
+                            }
+                        }
+                    }
+                    .padding(.top, Theme.px(8))
+                }
                 ErrorText(text: error)
             }
             .foregroundStyle(.white)
@@ -148,6 +168,8 @@ struct SignInView: View {
     @State private var password = ""
     @State private var working = false
     @State private var error: String?
+
+    private var recentServers: [Session.SavedServer] { Session.serverHistory }
     @State private var poll: Task<Void, Never>?
 
     var body: some View {
@@ -428,13 +450,26 @@ private struct AvatarStyle: ButtonStyle {
     }
 }
 
-/// A link into the app (`aiostreams://item/<id>`, `aiostreams://play/<id>`), from Top Shelf. Kept until
-/// the signed-in pages take it, as one can arrive before they're shown.
+/// A link into the app (`aiostreams://item/<id>`, `aiostreams://play/<id>`, or
+/// `aiostreams://return?...` from Infuse), from Top Shelf or an external player.
 enum DeepLink {
+    struct ExternalReturn {
+        let itemId: String?
+        let sourceId: String?
+        let positionMs: Double?
+        let finished: Bool
+    }
+
     static let opened = Notification.Name("aiostreams.deepLink")
     private(set) static var pending: URL?
+    private(set) static var pendingReturn: ExternalReturn?
 
     static func open(_ url: URL) {
+        if url.scheme == "aiostreams", url.host() == "return" {
+            pendingReturn = parseReturn(url)
+            NotificationCenter.default.post(name: opened, object: nil)
+            return
+        }
         pending = url
         NotificationCenter.default.post(name: opened, object: nil)
     }
@@ -445,5 +480,29 @@ enum DeepLink {
               ["item", "play"].contains(host), let id = url.pathComponents.dropFirst().first else { return nil }
         pending = nil
         return (host == "play", id)
+    }
+
+    static func takeReturn() -> ExternalReturn? {
+        defer { pendingReturn = nil }
+        return pendingReturn
+    }
+
+    private static func parseReturn(_ url: URL) -> ExternalReturn {
+        // Players that append their own `?position=...` onto an `x-success` that already has `?`
+        // create a second `?` in the query string; normalize extra `?` to `&`.
+        var raw = url.absoluteString
+        if let first = raw.firstIndex(of: "?") {
+            let tail = raw[raw.index(after: first)...].replacingOccurrences(of: "?", with: "&")
+            raw = String(raw[...first]) + tail
+        }
+        let items = URLComponents(string: raw)?.queryItems ?? []
+        let value = { (name: String) in items.first { $0.name == name }?.value }
+        let seconds = value("position").flatMap(Double.init)
+        return ExternalReturn(
+            itemId: value("played"),
+            sourceId: value("source"),
+            positionMs: seconds.map { $0 * 1000 },
+            finished: value("finished") == "1"
+        )
     }
 }

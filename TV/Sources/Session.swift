@@ -32,6 +32,27 @@ final class Session: ObservableObject {
 
     private let defaults = UserDefaults.standard
 
+    struct SavedServer: Codable, Hashable, Identifiable {
+        let address: String
+        let name: String?
+        var id: String { address }
+    }
+
+    static var serverHistory: [SavedServer] {
+        guard let data = UserDefaults.standard.data(forKey: Keys.history),
+              let list = try? JSONDecoder().decode([SavedServer].self, from: data) else { return [] }
+        return list
+    }
+
+    private static func recordHistory(address: String, name: String?) {
+        var list = serverHistory.filter { $0.address != address }
+        list.insert(SavedServer(address: address, name: name), at: 0)
+        if list.count > 5 { list = Array(list.prefix(5)) }
+        if let data = try? JSONEncoder().encode(list) {
+            UserDefaults.standard.set(data, forKey: Keys.history)
+        }
+    }
+
     init() {
         guard let saved = defaults.string(forKey: Keys.server), let base = URL(string: saved) else { return }
         serverName = defaults.string(forKey: Keys.serverName)
@@ -71,6 +92,7 @@ final class Session: ObservableObject {
         serverName = info.serverName
         defaults.set(base.absoluteString, forKey: Keys.server)
         defaults.set(info.serverName, forKey: Keys.serverName)
+        Self.recordHistory(address: base.absoluteString, name: info.serverName)
         stage = .needsSignIn
         AppLog.info("session", "connected to \(base.host ?? "?") (\(info.serverName ?? "unnamed"))")
     }
@@ -131,6 +153,7 @@ final class Session: ObservableObject {
     private enum Keys {
         static let server = "server.base"
         static let serverName = "server.name"
+        static let history = "server.history"
         static let userId = "user.id"
         static let userName = "user.name"
         static let token = "user.token"

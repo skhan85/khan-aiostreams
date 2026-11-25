@@ -1,3 +1,16 @@
+diff --git a/packages/web/src/lib/playback/external-return.ts b/packages/web/src/lib/playback/external-return.ts
+index 87b072f..8b4372e 100644
+--- a/packages/web/src/lib/playback/external-return.ts
++++ b/packages/web/src/lib/playback/external-return.ts
+@@ -20,7 +20,7 @@ export function externalReturnUrl(
+   template: string
+ ): string | undefined {
+   const host = currentHost().name;
+-  const app = host === 'desktop' || host === 'android-app';
++  const app = host === 'desktop' || host === 'android-app' || host === 'ios-app';
+   if (!app && host !== 'browser') return undefined;
+   // A player an intent link opens answers only the Android app that opened it.
+   if (!app && template.startsWith('intent:')) return undefined;
 diff --git a/packages/web/src/lib/settings/index.ts b/packages/web/src/lib/settings/index.ts
 index 3f11e17..af27eff 100644
 --- a/packages/web/src/lib/settings/index.ts

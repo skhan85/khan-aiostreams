@@ -80,6 +80,7 @@
 "Born %@" = "Nasceu em %@";
 "Browsing" = "Navegação";
 "Buffered" = "Em buffer";
+"Built-in player" = "Reprodutor integrado";
 "Calendar" = "Calendário";
 "Can't reach the server" = "Não foi possível acessar o servidor";
 "Cancel" = "Cancelar";
@@ -183,6 +184,7 @@
 "Keep watching" = "Continuar assistindo";
 "Kept on this Apple TV." = "Salvo nesta Apple TV.";
 "Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on." = "Salvo nesta Apple TV. Cada um funciona com o ajuste Ajustar Conteúdo da Apple TV ativado.";
+"Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player." = "Mantido nesta Apple TV. Trailers, canais ao vivo, sessões em grupo e versões que precisam de cabeçalhos próprios são reproduzidos no player integrado.";
 "LIVE" = "AO VIVO";
 "Language" = "Idioma";
 "Language and how subtitles look" = "Idioma e aparência das legendas";
@@ -276,6 +278,8 @@
 "Pink" = "Rosa";
 "Play" = "Reproduzir";
 "Play %@" = "Reproduzir %@";
+"Play in Infuse" = "Reproduzir no Infuse";
+"Play in built-in player" = "Reproduzir no player integrado";
 "Play lists the versions to choose from, but resuming goes back to the version you were watching. Hold select on a title and choose Play straight away to start the first." = "Reproduzir lista as versões para escolher, mas retomar volta à versão que você estava assistindo. Segure selecionar em um título e escolha Reproduzir diretamente para iniciar a primeira.";
 "Play next" = "Reproduzir o próximo";
 "Play starts the first version, and resuming goes back to the version you were watching. Hold select on a title and choose Choose a version to pick instead." = "Reproduzir inicia a primeira versão, e retomar volta à versão que você estava assistindo. Segure selecionar em um título e escolha Escolher uma versão para escolher você mesmo.";
@@ -305,6 +309,7 @@
 "Rating" = "Avaliação";
 "Recaps" = "Recapitulações";
 "Recent" = "Recentes";
+"Recent servers" = "Servidores recentes";
 "Reconnecting…" = "Reconectando…";
 "Red" = "Vermelho";
 "Release date" = "Data de lançamento";

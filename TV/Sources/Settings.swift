@@ -819,7 +819,7 @@ struct SettingsView: View {
             }
         case .about:
             section(nil, note: nil) {
-                fact(L("App"), "AIOStreams tvOS \(AppInfo.version)")
+                fact(L("App"), "Khan AIOStreams tvOS \(AppInfo.version)")
                 if let newer {
                     fact(L("Update"), L("Version %@ is out. Install it the way you installed this copy.", newer))
                 }
@@ -831,7 +831,7 @@ struct SettingsView: View {
             // The web app's About links, each as a code to scan, as a TV opens no web pages.
             section(nil, note: nil) {
                 LinkRow(name: L("Source code"), help: L("Where the app is made, and where to report a problem."),
-                        url: "https://github.com/wizaarddlabs/aiostreams-ios")
+                        url: "https://github.com/skhan85/khan-aiostreams")
                 LinkRow(name: L("Documentation"), help: L("How to use the app and what each setting does."),
                         url: "https://aiostreams.org/apps")
             }

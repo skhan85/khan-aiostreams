@@ -80,6 +80,7 @@
 "Born %@" = "Nasceu a %@";
 "Browsing" = "Navegação";
 "Buffered" = "Em buffer";
+"Built-in player" = "Leitor integrado";
 "Calendar" = "Calendário";
 "Can't reach the server" = "Não é possível contactar o servidor";
 "Cancel" = "Cancelar";
@@ -183,6 +184,7 @@
 "Keep watching" = "Continuar a ver";
 "Kept on this Apple TV." = "Guardado nesta Apple TV.";
 "Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on." = "Guardado nesta Apple TV. Cada um funciona com a definição Ajustar conteúdo da Apple TV ativada.";
+"Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player." = "Guardado nesta Apple TV. Trailers, canais em direto, sessões em grupo e versões que precisem de cabeçalhos próprios são reproduzidos no leitor integrado.";
 "LIVE" = "EM DIRETO";
 "Language" = "Idioma";
 "Language and how subtitles look" = "Idioma e aspeto das legendas";
@@ -276,6 +278,8 @@
 "Pink" = "Rosa";
 "Play" = "Reproduzir";
 "Play %@" = "Reproduzir %@";
+"Play in Infuse" = "Reproduzir no Infuse";
+"Play in built-in player" = "Reproduzir no leitor integrado";
 "Play lists the versions to choose from, but resuming goes back to the version you were watching. Hold select on a title and choose Play straight away to start the first." = "Reproduzir lista as versões para escolher, mas retomar volta à versão que estava a ver. Mantenha premido selecionar num título e escolha Reproduzir de imediato para iniciar a primeira.";
 "Play next" = "Reproduzir o seguinte";
 "Play starts the first version, and resuming goes back to the version you were watching. Hold select on a title and choose Choose a version to pick instead." = "Reproduzir inicia a primeira versão, e retomar volta à versão que estava a ver. Mantenha premido selecionar num título e escolha Escolher uma versão para escolher.";
@@ -305,6 +309,7 @@
 "Rating" = "Classificação";
 "Recaps" = "Resumos";
 "Recent" = "Recentes";
+"Recent servers" = "Servidores recentes";
 "Reconnecting…" = "A ligar novamente…";
 "Red" = "Vermelho";
 "Release date" = "Data de lançamento";

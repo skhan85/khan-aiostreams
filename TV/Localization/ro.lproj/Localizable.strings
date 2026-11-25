@@ -80,6 +80,7 @@
 "Born %@" = "Născut la %@";
 "Browsing" = "Navigare";
 "Buffered" = "În buffer";
+"Built-in player" = "Player integrat";
 "Calendar" = "Calendar";
 "Can't reach the server" = "Nu se poate conecta la server";
 "Cancel" = "Anulează";
@@ -183,6 +184,7 @@
 "Keep watching" = "Continuă vizionarea";
 "Kept on this Apple TV." = "Păstrat pe acest Apple TV.";
 "Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on." = "Păstrat pe acest Apple TV. Fiecare funcționează cu setarea Potrivire conținut a Apple TV activată.";
+"Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player." = "Păstrat pe acest Apple TV. Trailerele, canalele live, vizionările în grup și versiunile care necesită propriile antete sunt redate în playerul integrat.";
 "LIVE" = "LIVE";
 "Language" = "Limbă";
 "Language and how subtitles look" = "Limba și cum arată subtitrările";
@@ -276,6 +278,8 @@
 "Pink" = "Roz";
 "Play" = "Redă";
 "Play %@" = "Redă %@";
+"Play in Infuse" = "Redă în Infuse";
+"Play in built-in player" = "Redă în playerul integrat";
 "Play lists the versions to choose from, but resuming goes back to the version you were watching. Hold select on a title and choose Play straight away to start the first." = "Redă afișează versiunile din care să alegi, dar reluarea revine la versiunea pe care o vizionai. Ține apăsat pe selectare pe un titlu și alege Redă imediat pentru a o porni pe prima.";
 "Play next" = "Redă următorul";
 "Play starts the first version, and resuming goes back to the version you were watching. Hold select on a title and choose Choose a version to pick instead." = "Redă pornește prima versiune, iar reluarea revine la versiunea pe care o vizionai. Ține apăsat pe selectare pe un titlu și alege Alege o versiune pentru a alege tu.";
@@ -305,6 +309,7 @@
 "Rating" = "Evaluare";
 "Recaps" = "Recapitulări";
 "Recent" = "Recente";
+"Recent servers" = "Servere recente";
 "Reconnecting…" = "Se reconectează…";
 "Red" = "Roșu";
 "Release date" = "Data lansării";

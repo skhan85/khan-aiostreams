@@ -80,6 +80,7 @@
 "Born %@" = "Data di nascita: %@";
 "Browsing" = "Esplorazione";
 "Buffered" = "Nel buffer";
+"Built-in player" = "Lettore integrato";
 "Calendar" = "Calendario";
 "Can't reach the server" = "Impossibile raggiungere il server";
 "Cancel" = "Annulla";
@@ -183,6 +184,7 @@
 "Keep watching" = "Continua a guardare";
 "Kept on this Apple TV." = "Salvato su questa Apple TV.";
 "Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on." = "Salvato su questa Apple TV. Ciascuna funziona con l’impostazione Adatta contenuto di Apple TV attiva.";
+"Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player." = "Salvato su questa Apple TV. Trailer, canali live, watch party e versioni che richiedono header propri vengono riprodotti nel lettore integrato.";
 "LIVE" = "IN DIRETTA";
 "Language" = "Lingua";
 "Language and how subtitles look" = "Lingua e aspetto dei sottotitoli";
@@ -276,6 +278,8 @@
 "Pink" = "Rosa";
 "Play" = "Riproduci";
 "Play %@" = "Riproduci %@";
+"Play in Infuse" = "Riproduci in Infuse";
+"Play in built-in player" = "Riproduci nel lettore integrato";
 "Play lists the versions to choose from, but resuming goes back to the version you were watching. Hold select on a title and choose Play straight away to start the first." = "Riproduci elenca le versioni tra cui scegliere, ma la ripresa torna alla versione che stavi guardando. Tieni premuto seleziona su un titolo e scegli Riproduci subito per avviare la prima.";
 "Play next" = "Riproduci il successivo";
 "Play starts the first version, and resuming goes back to the version you were watching. Hold select on a title and choose Choose a version to pick instead." = "Riproduci avvia la prima versione, e la ripresa torna alla versione che stavi guardando. Tieni premuto seleziona su un titolo e scegli Scegli una versione per scegliere tu.";
@@ -305,6 +309,7 @@
 "Rating" = "Valutazione";
 "Recaps" = "Riassunti";
 "Recent" = "Recenti";
+"Recent servers" = "Server recenti";
 "Reconnecting…" = "Riconnessione…";
 "Red" = "Rosso";
 "Release date" = "Data di uscita";

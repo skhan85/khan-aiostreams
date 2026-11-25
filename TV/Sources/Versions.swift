@@ -14,8 +14,10 @@ struct VersionsView: View {
     @State private var error: String?
     @State private var opening: String?
     @State private var fromStart = false
+    @State private var selectedPlayer: ExternalPlayer?
     @FocusState private var focusedVersion: String?
 
+    private var activePlayer: ExternalPlayer { selectedPlayer ?? choice.player ?? ExternalPlayer.current }
     private var item: Item { choice.item }
     private var resumeMs: Double? { (choice.startMs ?? 0) > 0 ? choice.startMs : nil }
     private var sources: [MediaSource] { info?.mediaSources ?? [] }
@@ -83,6 +85,14 @@ struct VersionsView: View {
                     .font(Theme.font(Theme.sm))
                     .foregroundStyle(Theme.gray400)
                 Spacer()
+                if !item.isChannel {
+                    Button(activePlayer.label) {
+                        let all = ExternalPlayer.allCases
+                        let next = all[(all.firstIndex(of: activePlayer)! + 1) % all.count]
+                        selectedPlayer = next
+                    }
+                    .buttonStyle(SoftPillStyle())
+                }
                 Button {
                     Task { await load(refresh: true) }
                 } label: {
@@ -185,13 +195,14 @@ struct VersionsView: View {
         defer { opening = nil }
         var chosen = source
         var playSession = info?.playSessionId
-        if let named = try? await client.playbackInfo(userId: userId, itemId: item.id, sourceId: source.ownId),
+        if let named = try? await client.playbackInfo(userId: userId, itemId: item.id, sourceId: source.ownId,
+                                                      addonSubtitles: activePlayer != .builtIn),
            let match = named.mediaSources?.first(where: { $0.ownId == source.ownId }) ?? named.mediaSources?.first {
             chosen = match
             playSession = named.playSessionId ?? playSession
         }
         play(PlayRequest(item: item, source: chosen, playSessionId: playSession, startMs: fromStart ? 0 : choice.startMs,
-                         queue: choice.queue))
+                         queue: choice.queue, player: activePlayer))
     }
 
     private func clock(_ ms: Double) -> String {

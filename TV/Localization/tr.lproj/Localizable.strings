@@ -80,6 +80,7 @@
 "Born %@" = "%@ tarihinde doğdu";
 "Browsing" = "Gezinme";
 "Buffered" = "Arabellek";
+"Built-in player" = "Yerleşik oynatıcı";
 "Calendar" = "Takvim";
 "Can't reach the server" = "Sunucuya ulaşılamıyor";
 "Cancel" = "İptal et";
@@ -183,6 +184,7 @@
 "Keep watching" = "İzlemeye devam et";
 "Kept on this Apple TV." = "Bu Apple TV'de saklanır.";
 "Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on." = "Bu Apple TV’de saklanır. Her biri Apple TV’nin İçeriği Eşleştir ayarı açıkken çalışır.";
+"Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player." = "Bu Apple TV'de saklanır. Fragmanlar, canlı kanallar, izleme partileri ve kendi başlıklarına ihtiyaç duyan sürümler yerleşik oynatıcıda oynatılır.";
 "LIVE" = "CANLI";
 "Language" = "Dil";
 "Language and how subtitles look" = "Dil ve altyazı görünümü";
@@ -276,6 +278,8 @@
 "Pink" = "Pembe";
 "Play" = "Oynat";
 "Play %@" = "%@ oynat";
+"Play in Infuse" = "Infuse'da oynat";
+"Play in built-in player" = "Yerleşik oynatıcıda oynat";
 "Play lists the versions to choose from, but resuming goes back to the version you were watching. Hold select on a title and choose Play straight away to start the first." = "Oynat seçebileceğin sürümleri listeler, ama devam etmek izlediğin sürüme döner. İlkini başlatmak için bir içerikte seçme tuşunu basılı tut ve Hemen oynat'ı seç.";
 "Play next" = "Sonrakini oynat";
 "Play starts the first version, and resuming goes back to the version you were watching. Hold select on a title and choose Choose a version to pick instead." = "Oynat ilk sürümü başlatır, devam etmek ise izlediğin sürüme döner. Kendin seçmek için bir içerikte seçme tuşunu basılı tut ve Sürüm seç'i seç.";
@@ -305,6 +309,7 @@
 "Rating" = "Puan";
 "Recaps" = "Özetler";
 "Recent" = "Son izlenenler";
+"Recent servers" = "Son sunucular";
 "Reconnecting…" = "Yeniden bağlanılıyor…";
 "Red" = "Kırmızı";
 "Release date" = "Çıkış tarihi";

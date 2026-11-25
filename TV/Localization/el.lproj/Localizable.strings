@@ -80,6 +80,7 @@
 "Born %@" = "Ημερομηνία γέννησης: %@";
 "Browsing" = "Περιήγηση";
 "Buffered" = "Προσωρινή μνήμη";
+"Built-in player" = "Ενσωματωμένο πρόγραμμα αναπαραγωγής";
 "Calendar" = "Ημερολόγιο";
 "Can't reach the server" = "Αδυναμία επικοινωνίας με τον διακομιστή";
 "Cancel" = "Ακύρωση";
@@ -183,6 +184,7 @@
 "Keep watching" = "Συνέχεια παρακολούθησης";
 "Kept on this Apple TV." = "Αποθηκεύονται σε αυτό το Apple TV.";
 "Kept on this Apple TV. Each works with the Apple TV's own Match Content setting on." = "Αποθηκεύεται σε αυτό το Apple TV. Καθένα λειτουργεί με ενεργή τη ρύθμιση Αντιστοίχιση περιεχομένου του Apple TV.";
+"Kept on this Apple TV. Trailers, live channels, watch parties and versions that need their own headers play in the built-in player." = "Αποθηκεύεται σε αυτό το Apple TV. Τα τρέιλερ, τα ζωντανά κανάλια, τα watch parties και οι εκδόσεις που χρειάζονται δικές τους κεφαλίδες παίζουν στον ενσωματωμένο player.";
 "LIVE" = "ΖΩΝΤΑΝΑ";
 "Language" = "Γλώσσα";
 "Language and how subtitles look" = "Γλώσσα και εμφάνιση υποτίτλων";
@@ -276,6 +278,8 @@
 "Pink" = "Ροζ";
 "Play" = "Αναπαραγωγή";
 "Play %@" = "Αναπαραγωγή %@";
+"Play in Infuse" = "Αναπαραγωγή στο Infuse";
+"Play in built-in player" = "Αναπαραγωγή στον ενσωματωμένο player";
 "Play lists the versions to choose from, but resuming goes back to the version you were watching. Hold select on a title and choose Play straight away to start the first." = "Η αναπαραγωγή εμφανίζει τις εκδόσεις για επιλογή, αλλά η συνέχιση επιστρέφει στην έκδοση που έβλεπες. Κράτα πατημένο το κουμπί επιλογής σε έναν τίτλο και διάλεξε «Άμεση αναπαραγωγή» για να ξεκινήσει η πρώτη.";
 "Play next" = "Αναπαραγωγή επόμενου";
 "Play starts the first version, and resuming goes back to the version you were watching. Hold select on a title and choose Choose a version to pick instead." = "Η αναπαραγωγή ξεκινά την πρώτη έκδοση και η συνέχιση επιστρέφει στην έκδοση που έβλεπες. Κράτα πατημένο το κουμπί επιλογής σε έναν τίτλο και διάλεξε «Επίλεξε έκδοση» για να επιλέξεις εσύ.";
@@ -305,6 +309,7 @@
 "Rating" = "Βαθμολογία";
 "Recaps" = "Ανακεφαλαιώσεις";
 "Recent" = "Πρόσφατα";
+"Recent servers" = "Πρόσφατοι διακομιστές";
 "Reconnecting…" = "Γίνεται επανασύνδεση…";
 "Red" = "Κόκκινο";
 "Release date" = "Ημερομηνία κυκλοφορίας";

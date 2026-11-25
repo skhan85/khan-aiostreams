@@ -13,6 +13,8 @@ struct VersionChoice: Identifiable {
     var mode: PlayMode = .usual
     /// What plays on after it, from a playlist, in place of a show's next episode.
     var queue: [Item] = []
+    /// Per-title player override; nil uses the Apple TV's chosen default.
+    var player: ExternalPlayer? = nil
 }
 
 /// The version each title last played in, kept on this device, which resuming goes back to.
@@ -169,10 +171,15 @@ struct PlayFlow: ViewModifier {
             return
         }
         // Khan AIOStreams: Infuse or VLC where chosen, the app's own player otherwise.
-        let player = ExternalPlayer.current
+        let player = request.player ?? ExternalPlayer.current
         if player.takes(request), let client = session.client {
             Task {
-                if await player.open(request, client: client) {
+                if await player.open(
+                    request,
+                    client: client,
+                    subtitleLanguages: prefs.languages(list: "SubtitleLanguages", one: "SubtitleLanguagePreference"),
+                    subtitleMode: prefs.subtitleMode
+                ) {
                     finished()
                 } else {
                     playing = request
@@ -192,20 +199,22 @@ struct PlayFlow: ViewModifier {
         let sources = (info?.mediaSources ?? []).filter { $0.aiostreams?.ytId == nil }
         let last = (choice.startMs ?? 0) > 0 ? LastVersions.find(choice.item.id, in: sources) : nil
         guard let source = last ?? sources.first else {
-            self.choice = VersionChoice(item: choice.item, startMs: choice.startMs, mode: .list)
+            self.choice = VersionChoice(item: choice.item, startMs: choice.startMs, mode: .list, queue: choice.queue, player: choice.player)
             return
         }
         // Named again, the version brings its subtitles from the configuration's subtitle addons.
         var chosen = source
         var playSession = info?.playSessionId
+        let targetPlayer = choice.player ?? ExternalPlayer.current
         if let named = try? await client.playbackInfo(userId: userId, itemId: choice.item.id, sourceId: source.ownId,
-                                                      addonSubtitles: choice.item.isChannel),
+                                                      addonSubtitles: choice.item.isChannel || targetPlayer != .builtIn),
            let match = named.mediaSources?.first(where: { $0.ownId == source.ownId }) ?? named.mediaSources?.first {
             chosen = match
             playSession = named.playSessionId ?? playSession
         }
         LastVersions.set(choice.item.id, chosen)
-        present(PlayRequest(item: choice.item, source: chosen, playSessionId: playSession, startMs: choice.startMs, queue: choice.queue))
+        present(PlayRequest(item: choice.item, source: chosen, playSessionId: playSession, startMs: choice.startMs,
+                            queue: choice.queue, player: choice.player))
     }
 
 }
@@ -255,4 +264,6 @@ struct PlayRequest: Identifiable {
     var audioLanguages: [String]?
     /// The watch party's title it plays, which the party's commands drive.
     var partyEntry: String?
+    /// Per-title player override; nil uses the Apple TV's chosen default.
+    var player: ExternalPlayer? = nil
 }

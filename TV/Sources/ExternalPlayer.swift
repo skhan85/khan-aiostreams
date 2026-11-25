@@ -7,6 +7,9 @@ enum ExternalPlayer: String, CaseIterable {
     case builtIn = "", infuse, vlc
 
     static let key = "khan.externalPlayer"
+    private static let maxSubtitles = 10
+    private static let imageSubtitleCodecs: Set<String> = ["pgssub", "hdmv_pgs_subtitle", "dvd_subtitle", "dvdsub", "vobsub", "dvb_subtitle"]
+    @MainActor private(set) static var launchedExternally = false
 
     /// Infuse by default: it plays the stream and scrobbles to Trakt itself.
     static var current: ExternalPlayer {
@@ -15,6 +18,12 @@ enum ExternalPlayer: String, CaseIterable {
             return ExternalPlayer(rawValue: saved) ?? .infuse
         }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: key) }
+    }
+
+    @MainActor static func consumeExternalReturn() -> Bool {
+        guard launchedExternally else { return false }
+        launchedExternally = false
+        return true
     }
 
     var label: String {
@@ -33,8 +42,32 @@ enum ExternalPlayer: String, CaseIterable {
         return true
     }
 
+    /// External text subtitle URLs ordered by the user's preferred subtitle languages, matching the web app.
+    private static func subtitleURLs(for source: MediaSource, client: JellyfinClient, languages: [String], mode: String) -> [URL] {
+        guard mode != "None" else { return [] }
+        let externals = (source.mediaStreams ?? []).filter { stream in
+            guard stream.type == "Subtitle", let delivery = stream.deliveryUrl, !delivery.isEmpty else { return false }
+            if let codec = stream.codec?.lowercased(), imageSubtitleCodecs.contains(codec) { return false }
+            return true
+        }
+        guard !externals.isEmpty else { return [] }
+        let ordered: [MediaStream]
+        if languages.isEmpty {
+            ordered = externals
+        } else {
+            let ranked = externals.sorted { a, b in
+                let ai = languages.firstIndex { LanguageCodes.same($0, a.language) } ?? languages.count
+                let bi = languages.firstIndex { LanguageCodes.same($0, b.language) } ?? languages.count
+                return ai < bi
+            }
+            let matching = ranked.filter { stream in languages.contains { LanguageCodes.same($0, stream.language) } }
+            ordered = matching.isEmpty ? ranked : matching
+        }
+        return ordered.prefix(maxSubtitles).compactMap { $0.deliveryUrl.flatMap { client.absolute($0) } }
+    }
+
     /// The link that opens the stream in this player, from the request's start.
-    func link(for request: PlayRequest, client: JellyfinClient) -> URL? {
+    func link(for request: PlayRequest, client: JellyfinClient, subtitleLanguages: [String] = [], subtitleMode: String = "Default") -> URL? {
         guard let stream = client.streamURL(itemId: request.item.id, source: request.source) else { return nil }
         switch self {
         case .builtIn:
@@ -44,12 +77,16 @@ enum ExternalPlayer: String, CaseIterable {
             parts.scheme = "infuse"
             parts.host = "x-callback-url"
             parts.path = "/play"
+            let returnLink = "aiostreams://return?played=\(request.item.id)&source=\(request.source.ownId)"
             var query = [
                 URLQueryItem(name: "url", value: stream.absoluteString),
                 URLQueryItem(name: "filename", value: Self.filename(request.item)),
-                URLQueryItem(name: "x-success", value: "aiostreams://"),
-                URLQueryItem(name: "x-error", value: "aiostreams://"),
+                URLQueryItem(name: "x-success", value: returnLink),
+                URLQueryItem(name: "x-error", value: "aiostreams://return"),
             ]
+            for sub in Self.subtitleURLs(for: request.source, client: client, languages: subtitleLanguages, mode: subtitleMode) {
+                query.append(URLQueryItem(name: "sub", value: sub.absoluteString))
+            }
             if let start = request.startMs, start > 0 {
                 query.append(URLQueryItem(name: "position", value: String(Int(start / 1000))))
             }
@@ -88,12 +125,13 @@ enum ExternalPlayer: String, CaseIterable {
     /// Opens the request in this player, telling the server it started so it shows in Continue
     /// Watching. Returns false where the player can't take it, for the app's own to play instead.
     @MainActor
-    func open(_ request: PlayRequest, client: JellyfinClient) async -> Bool {
-        guard takes(request), let url = link(for: request, client: client) else { return false }
+    func open(_ request: PlayRequest, client: JellyfinClient, subtitleLanguages: [String] = [], subtitleMode: String = "Default") async -> Bool {
+        guard takes(request), let url = link(for: request, client: client, subtitleLanguages: subtitleLanguages, subtitleMode: subtitleMode) else { return false }
         guard await UIApplication.shared.open(url) else {
             AppLog.warn("player", "\(label) did not open")
             return false
         }
+        Self.launchedExternally = true
         var body: [String: Any] = [
             "ItemId": request.item.id,
             "MediaSourceId": request.source.ownId,

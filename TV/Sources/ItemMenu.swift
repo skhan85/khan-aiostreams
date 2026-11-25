@@ -13,6 +13,10 @@ private struct PlayItemKey: EnvironmentKey {
     static let defaultValue: (Item, PlayMode) -> Void = { _, _ in }
 }
 
+private struct PlayItemInKey: EnvironmentKey {
+    static let defaultValue: (Item, PlayMode, ExternalPlayer) -> Void = { _, _, _ in }
+}
+
 private struct OpenRouteKey: EnvironmentKey {
     static let defaultValue: (Route) -> Void = { _ in }
 }
@@ -22,6 +26,12 @@ extension EnvironmentValues {
     var playItem: (Item, PlayMode) -> Void {
         get { self[PlayItemKey.self] }
         set { self[PlayItemKey.self] = newValue }
+    }
+
+    /// Plays a title in a chosen player (Infuse, VLC, or built-in) without changing Settings.
+    var playItemIn: (Item, PlayMode, ExternalPlayer) -> Void {
+        get { self[PlayItemInKey.self] }
+        set { self[PlayItemInKey.self] = newValue }
     }
 
     /// Opens a page on the current place's stack.
@@ -35,6 +45,7 @@ struct ItemMenu: ViewModifier {
     @EnvironmentObject private var session: Session
     @EnvironmentObject private var prefs: Preferences
     @Environment(\.playItem) private var play
+    @Environment(\.playItemIn) private var playIn
     @Environment(\.openRoute) private var openRoute
     @Environment(\.removeFromPlaylist) private var removeFromPlaylist
     let item: Item
@@ -64,6 +75,17 @@ struct ItemMenu: ViewModifier {
                 } else {
                     Button { play(item, .straight) } label: {
                         Label(L("Play straight away"), systemImage: "forward.end")
+                    }
+                }
+                if !item.isChannel {
+                    if ExternalPlayer.current == .builtIn {
+                        Button { playIn(item, .usual, .infuse) } label: {
+                            Label(L("Play in Infuse"), systemImage: "arrow.up.forward.app")
+                        }
+                    } else {
+                        Button { playIn(item, .usual, .builtIn) } label: {
+                            Label(L("Play in built-in player"), systemImage: "play.rectangle")
+                        }
                     }
                 }
             }

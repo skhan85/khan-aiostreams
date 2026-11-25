@@ -438,7 +438,7 @@ final class RootViewController: UIViewController, WKNavigationDelegate, WKUIDele
     /// The app, the device and its screen, the player's state and the recent log, for a problem report.
     private func diagnostics(web: String?, server: String?) -> String {
         [
-            "App: AIOStreams iOS \(AppInfo.version)",
+            "App: Khan AIOStreams iOS \(AppInfo.version)",
             "Device: \(AppInfo.deviceModel), iOS \(UIDevice.current.systemVersion)",
             "Screen: \(view.bounds.size), margins \(view.safeAreaInsets)",
             "Web: \(web ?? "?")",
