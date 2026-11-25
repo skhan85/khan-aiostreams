@@ -1,0 +1,83 @@
+{
+  "name": "Khan AIOStreams for Apple TV",
+  "identifier": "com.skhan85.khanaiostreams.tv",
+  "subtitle": "An unofficial Apple TV app for AIOStreams.",
+  "website": "https://github.com/skhan85/khan-aiostreams",
+  "iconURL": "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/AIOStreams/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
+  "tintColor": "6152DF",
+  "apps": [
+    {
+      "name": "Khan AIOStreams",
+      "bundleIdentifier": "com.skhan85.khanaiostreams.tv",
+      "developerName": "skhan85",
+      "subtitle": "Your AIOStreams server, played through Infuse or AetherEngine.",
+      "localizedDescription": "An unofficial native Apple TV app for AIOStreams, built to look and work like the official apps, with Infuse handoff by default and AetherEngine built in: HDR10, HDR10+, Dolby Vision and Atmos, Live TV with a guide and catch-up, watch parties, Top Shelf and more. Not affiliated with AIOStreams or AetherEngine.",
+      "iconURL": "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/AIOStreams/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
+      "tintColor": "6152DF",
+      "category": "entertainment",
+      "screenshots": [
+        "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/docs/screenshots/tv-home.jpg",
+        "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/docs/screenshots/tv-show.jpg",
+        "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/docs/screenshots/tv-movie.jpg",
+        "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/docs/screenshots/tv-player.jpg"
+      ],
+      "versions": [
+        {
+          "version": "1.0.0",
+          "date": "2026-11-25T04:24:37Z",
+          "localizedDescription": "Unsigned IPAs built from 6376790: sign them when you install them (atvloadly for Apple TV).",
+          "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-172/KhanAIOStreams-tvOS-1.0.0-172.ipa",
+          "size": 13248413,
+          "minOSVersion": "18.0",
+          "buildVersion": "172",
+          "sha256": "66d1bcefb5197e97383420daecf9c5797f275f955f5e9f3073f92d416008c71e"
+        },
+        {
+          "version": "1.0.0",
+          "date": "2026-11-21T16:11:56Z",
+          "localizedDescription": "Unsigned IPAs built from 5e7a121: sign them when you install them (atvloadly for Apple TV).",
+          "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-153/KhanAIOStreams-tvOS-1.0.0-153.ipa",
+          "size": 12988055,
+          "minOSVersion": "18.0",
+          "buildVersion": "153"
+        },
+        {
+          "version": "1.0.0",
+          "date": "2026-11-20T01:46:29Z",
+          "localizedDescription": "Unsigned IPAs built from e632643: sign them when you install them (atvloadly for Apple TV).",
+          "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-146/KhanAIOStreams-tvOS-1.0.0-146.ipa",
+          "size": 12978691,
+          "minOSVersion": "18.0",
+          "buildVersion": "146"
+        },
+        {
+          "version": "1.0.0",
+          "date": "2026-11-15T22:18:00Z",
+          "localizedDescription": "Unsigned IPAs built from 5516390: sign them when you install them (atvloadly for Apple TV).",
+          "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-107/KhanAIOStreams-tvOS-1.0.0-107.ipa",
+          "size": 12520309,
+          "minOSVersion": "18.0",
+          "buildVersion": "107"
+        },
+        {
+          "version": "1.0.0",
+          "date": "2026-11-15T21:18:14Z",
+          "localizedDescription": "Unsigned IPAs built from b6378e6: sign them when you install them (atvloadly for Apple TV).",
+          "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-105/KhanAIOStreams-tvOS-1.0.0-105.ipa",
+          "size": 12520307,
+          "minOSVersion": "18.0",
+          "buildVersion": "105"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [
+          "com.apple.security.application-groups"
+        ],
+        "privacy": {
+          "NSLocalNetworkUsageDescription": "Khan AIOStreams connects to your server and streams on your local network."
+        }
+      }
+    }
+  ],
+  "news": []
+}
