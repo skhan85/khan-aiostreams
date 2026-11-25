@@ -1,0 +1,82 @@
+{
+  "name": "Khan AIOStreams for iOS",
+  "identifier": "com.skhan85.khanaiostreams",
+  "subtitle": "An unofficial iPhone and iPad port of AIOStreams.",
+  "website": "https://github.com/skhan85/khan-aiostreams",
+  "iconURL": "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/AIOStreams/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
+  "tintColor": "6152DF",
+  "apps": [
+    {
+      "name": "Khan AIOStreams",
+      "bundleIdentifier": "com.skhan85.khanaiostreams",
+      "developerName": "skhan85",
+      "subtitle": "Your AIOStreams server, played through Infuse or AetherEngine.",
+      "localizedDescription": "An unofficial iPhone and iPad port of the AIOStreams app. It runs AIOStreams' own web app over AetherEngine, with Infuse as the default player, HDR10, HDR10+, Dolby Vision and Atmos, trailers, Picture in Picture and downloads. Not affiliated with AIOStreams or AetherEngine.",
+      "iconURL": "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/AIOStreams/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
+      "tintColor": "6152DF",
+      "category": "entertainment",
+      "screenshots": [
+        "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/docs/screenshots/iphone-home.jpg",
+        "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/docs/screenshots/iphone-show.jpg",
+        "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/docs/screenshots/iphone-movie.jpg",
+        "https://raw.githubusercontent.com/skhan85/khan-aiostreams/main/docs/screenshots/iphone-versions.jpg"
+      ],
+      "versions": [
+        {
+          "version": "1.0.0",
+          "date": "2026-11-25T04:24:37Z",
+          "localizedDescription": "Unsigned IPAs built from 6376790: sign them when you install them (atvloadly for Apple TV).",
+          "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-172/KhanAIOStreams-1.0.0-172.ipa",
+          "size": 18330144,
+          "minOSVersion": "18.0",
+          "buildVersion": "172",
+          "sha256": "120f88a394acd958b96d3371ea12d2e0b05c17b3a252dc0eecf0ffb4037bde77"
+        },
+        {
+          "version": "1.0.0",
+          "date": "2026-11-21T16:11:56Z",
+          "localizedDescription": "Unsigned IPAs built from 5e7a121: sign them when you install them (atvloadly for Apple TV).",
+          "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-153/KhanAIOStreams-1.0.0-153.ipa",
+          "size": 18069634,
+          "minOSVersion": "18.0",
+          "buildVersion": "153"
+        },
+        {
+          "version": "1.0.0",
+          "date": "2026-11-20T01:46:29Z",
+          "localizedDescription": "Unsigned IPAs built from e632643: sign them when you install them (atvloadly for Apple TV).",
+          "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-146/KhanAIOStreams-1.0.0-146.ipa",
+          "size": 18061957,
+          "minOSVersion": "18.0",
+          "buildVersion": "146"
+        },
+        {
+          "version": "1.0.0",
+          "date": "2026-11-15T22:18:00Z",
+          "localizedDescription": "Unsigned IPAs built from 5516390: sign them when you install them (atvloadly for Apple TV).",
+          "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-107/KhanAIOStreams-1.0.0-107.ipa",
+          "size": 17742623,
+          "minOSVersion": "18.0",
+          "buildVersion": "107"
+        },
+        {
+          "version": "1.0.0",
+          "date": "2026-11-15T21:18:14Z",
+          "localizedDescription": "Unsigned IPAs built from b6378e6: sign them when you install them (atvloadly for Apple TV).",
+          "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-105/KhanAIOStreams-1.0.0-105.ipa",
+          "size": 17742622,
+          "minOSVersion": "18.0",
+          "buildVersion": "105"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSLocalNetworkUsageDescription": "Khan AIOStreams connects to your server and streams on your local network.",
+          "NSMicrophoneUsageDescription": "Voice search in the page's search field uses the microphone."
+        }
+      }
+    }
+  ],
+  "news": []
+}
