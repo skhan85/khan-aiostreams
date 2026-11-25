@@ -128,6 +128,7 @@
 "Donate" = "Wsparcie";
 "Earlier" = "Wcześniej";
 "Ended" = "Zakończony";
+"Ends at %@" = "Koniec o %@";
 "Enter the code the other device shows to sign it in to this account." = "Wpisz kod wyświetlany na drugim urządzeniu, aby zalogować je na to konto.";
 "Episodes" = "Odcinki";
 "Evens out loud and quiet scenes, for listening at a low volume. Not for sound passed through." = "Wyrównuje głośne i ciche sceny, ułatwiając słuchanie przy niskiej głośności. Nie działa przy przekazywaniu dźwięku (passthrough).";
@@ -324,6 +325,7 @@
 "SDH, with sounds described" = "SDH, z opisem dźwięków (dla niesłyszących)";
 "Sans serif" = "Bezszeryfowa (Sans serif)";
 "Saved to your account, so the web app and your other devices use them too." = "Zapisywane na Twoim koncie, więc aplikacja webowa i inne Twoje urządzenia też z nich korzystają.";
+"Screen margins" = "Marginesy ekranu";
 "Search" = "Szukaj";
 "Search again" = "Szukaj ponownie";
 "Searching your addons…" = "Przeszukiwanie Twoich addonów…";
@@ -347,6 +349,7 @@
 "Show the clock" = "Pokazuj zegar";
 "Show time left" = "Pokazuj pozostały czas";
 "Shows" = "Seriale";
+"Shrinks the whole app towards the middle of the screen, for TVs and projectors that cut off its edges." = "Zmniejsza całą aplikację w stronę środka ekranu, dla telewizorów i projektorów, które obcinają jego krawędzie.";
 "Shuffle" = "Odtwarzaj losowo";
 "Sign in" = "Zaloguj się";
 "Signed in as" = "Zalogowano jako";
@@ -471,6 +474,7 @@
 "What your speakers or receiver take. Surround sound with more is mixed down, with its dialogue kept in." = "Co biorą Twoje głośniki lub odbiornik. Dźwięk przestrzenny z większą liczbą kanałów jest miksowany w dół z zachowaniem dialogów.";
 "When a version has more than one kind of audio track, the first of these it has plays." = "Gdy wersja zawiera więcej niż jeden rodzaj ścieżki dźwiękowej, odtwarzana jest pierwsza pasująca z tej listy.";
 "When a version has more than one subtitle in your language, the first of these it has shows. Commentary comes last." = "Gdy wersja ma więcej niż jedną ścieżkę napisów w Twoim języku, wyświetlana jest pierwsza pasująca z tej listy. Napisy z komentarzem są brane pod uwagę na końcu.";
+"Where every title's subtitles start. Below zero shows them earlier. The player's Timing panel still moves them while you watch." = "Od którego miejsca zaczynają się napisy każdego tytułu. Poniżej zera pojawiają się wcześniej. Panel Synchronizacja w odtwarzaczu nadal je przesuwa podczas oglądania.";
 "Where the app is made, and where to report a problem." = "Gdzie powstaje aplikacja i gdzie można zgłosić problem.";
 "White" = "Biały";
 "Who you are signed in as" = "Jako kto jesteś zalogowany";

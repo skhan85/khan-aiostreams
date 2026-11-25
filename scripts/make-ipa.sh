@@ -107,6 +107,9 @@ build() {
   rm -rf "$staging" "$here/build/$ipa"
   mkdir -p "$staging/Payload"
   cp -R "$app" "$staging/Payload/"
+  # The engine's frameworks arrive read-only, and signers that rewrite binaries in place (zsign,
+  # used by FlareStore and others) cannot open a read-only file: give the owner write access.
+  chmod -R u+w "$staging/Payload"
   (cd "$staging" && zip -qry "$here/build/$ipa" Payload)
   echo "built $here/build/$ipa"
 }
