@@ -26,3 +26,48 @@ index 3f11e17..af27eff 100644
        'aiostreams-web-player',
      ]),
      link: local(device<string>('aiostreams-web-player-link', '')),
+diff --git a/packages/web/src/lib/playback/now-playing.ts b/packages/web/src/lib/playback/now-playing.ts
+index 65f40e88..c1ff2b1f 100644
+--- a/packages/web/src/lib/playback/now-playing.ts
++++ b/packages/web/src/lib/playback/now-playing.ts
+@@ -54,6 +54,24 @@ export function useNowPlaying(
+   const [background] = useSetting(settings.app.background);
+   const show = useItem(item.SeriesId ?? item.Id!);
+   const imdb = (item.Type === 'Episode' ? show.data : item)?.ProviderIds?.Imdb;
++  // Khan AIOStreams: the title as Scrob identifies it, for the app's Scrob reports.
++  const ids = (item.Type === 'Episode' ? show.data : item)?.ProviderIds;
++  const scrob =
++    item.Type === 'Movie' || item.Type === 'Episode'
++      ? {
++          type: item.Type === 'Movie' ? 'movie' : 'episode',
++          id: item.Id ?? null,
++          title: item.Name ?? '',
++          showtitle: item.SeriesName ?? null,
++          season: item.ParentIndexNumber ?? null,
++          episode: item.IndexNumber ?? null,
++          year: item.ProductionYear ?? null,
++          tmdb: ids?.Tmdb ?? null,
++          imdb: ids?.Imdb ?? null,
++          tvdb: ids?.Tvdb ?? null,
++        }
++      : null;
++  const scrobKey = scrob ? JSON.stringify(scrob) : null;
+   const title = itemTitle(item);
+   const subtitle = itemSubtitle(item) || null;
+   const artwork =
+@@ -114,6 +132,7 @@ export function useNowPlaying(
+         title,
+         subtitle,
+         imdb: imdb ?? null,
++        scrob,
+         artwork,
+         previous: hasPrevious,
+         next: hasNext,
+@@ -127,6 +146,7 @@ export function useNowPlaying(
+     title,
+     subtitle,
+     imdb,
++    scrobKey,
+     artwork,
+     hasPrevious,
+     hasNext,

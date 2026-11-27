@@ -12,6 +12,8 @@ final class PlayerChannel {
     private let overlay: SubtitleOverlayView
     private let thumbnails: ThumbnailStore
     private let nowPlaying: NowPlaying
+    /// Sends plays to a linked Scrob server (Khan AIOStreams).
+    private let scrob = PhoneScrob()
     /// Shows the video beneath the page, or hides it once nothing plays.
     var showVideo: (Bool) -> Void = { _ in }
     /// A title loaded or stopped, which changes whether Picture in Picture can be offered.
@@ -87,7 +89,10 @@ final class PlayerChannel {
 
     private func observe() {
         engine.$state
-            .sink { [weak self] state in self?.stateChanged(state) }
+            .sink { [weak self] state in
+                self?.scrob.stateChanged(state)
+                self?.stateChanged(state)
+            }
             .store(in: &bag)
         engine.$isBuffering.removeDuplicates()
             .sink { [weak self] in self?.state(["buffering": $0]) }
@@ -110,6 +115,7 @@ final class PlayerChannel {
             .throttle(for: .milliseconds(250), scheduler: RunLoop.main, latest: true)
             .sink { [weak self] seconds in
                 guard let self, self.loadedURL != nil else { return }
+                self.scrob.tick(seconds, of: self.engine.duration)
                 self.state(["positionMs": JSON.finite((seconds + self.archiveOffset) * 1000)])
             }
             .store(in: &bag)
@@ -401,6 +407,7 @@ final class PlayerChannel {
             if let on = JSON.flag(message["upscaling"]) { setUpscaling(on) }
         case "now-playing":
             nowPlaying.setItem(message["item"] as? [String: Any])
+            scrob.nowPlaying(message["item"] as? [String: Any], engineState: engine.state)
         default:
             return false
         }
@@ -601,6 +608,8 @@ final class PlayerChannel {
     }
 
     private func stop() {
+        scrob.tick(engine.currentTime, of: engine.duration)
+        scrob.finish(ended: false)
         dropFrames()
         playingUpscaled = nil
         loadedHeaders = [:]

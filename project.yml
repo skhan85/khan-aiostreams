@@ -103,6 +103,7 @@ targets:
       - path: AIOStreams/Sources/Support.swift
       - path: AIOStreams/Sources/SubtitleOverlayView.swift
       - path: AIOStreams/Sources/YouTube.swift
+      - path: AIOStreams/Sources/ScrobCore.swift
       - path: TV/Shared
     dependencies:
       - package: AetherEngineFeatures
