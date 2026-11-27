@@ -3488,6 +3488,38 @@
       "zh-Hans": "最近的服务器",
       "ar": "الخوادم الأخيرة",
       "ro": "Servere recente"
+    },
+    "Binaural for headphones": {
+      "de": "Binaural für Kopfhörer",
+      "el": "Binaural για ακουστικά",
+      "es": "Binaural para auriculares",
+      "fr": "Binaural pour casque",
+      "id": "Binaural untuk headphone",
+      "it": "Binaurale per cuffie",
+      "ms": "Binaural untuk fon kepala",
+      "pl": "Dźwięk binauralny na słuchawki",
+      "pt-BR": "Binaural para fones de ouvido",
+      "pt": "Binaural para auscultadores",
+      "tr": "Kulaklık için binaural",
+      "zh-Hans": "耳机双耳音效",
+      "ar": "صوت ثنائي الأذن للسماعات",
+      "ro": "Binaural pentru căști"
+    },
+    "Places 5.1, 7.1 and Atmos around you on any headphones instead of folding them to stereo. For headphones only, not speakers.": {
+      "de": "Verteilt 5.1, 7.1 und Atmos auf beliebigen Kopfhörern rund um dich, statt sie zu Stereo zusammenzufassen. Nur für Kopfhörer, nicht für Lautsprecher.",
+      "el": "Τοποθετεί τον ήχο 5.1, 7.1 και Atmos γύρω σας σε οποιαδήποτε ακουστικά αντί να τον συμπτύσσει σε στερεοφωνικό. Μόνο για ακουστικά, όχι για ηχεία.",
+      "es": "Coloca el sonido 5.1, 7.1 y Atmos a tu alrededor en cualquier auricular en lugar de reducirlo a estéreo. Solo para auriculares, no para altavoces.",
+      "fr": "Place le son 5.1, 7.1 et Atmos autour de vous sur n’importe quel casque au lieu de le réduire en stéréo. Pour casque uniquement, pas pour enceintes.",
+      "id": "Menempatkan suara 5.1, 7.1 dan Atmos di sekitar Anda di headphone apa pun alih-alih melipatnya ke stereo. Hanya untuk headphone, bukan speaker.",
+      "it": "Colloca l’audio 5.1, 7.1 e Atmos intorno a te su qualsiasi cuffia invece di ridurlo a stereo. Solo per cuffie, non per altoparlanti.",
+      "ms": "Meletakkan bunyi 5.1, 7.1 dan Atmos di sekeliling anda pada mana-mana fon kepala dan bukannya menggabungkannya kepada stereo. Untuk fon kepala sahaja, bukan pembesar suara.",
+      "pl": "Rozmieszcza dźwięk 5.1, 7.1 i Atmos wokół ciebie na dowolnych słuchawkach zamiast łączyć go do stereo. Tylko dla słuchawek, nie głośników.",
+      "pt-BR": "Coloca o som 5.1, 7.1 e Atmos ao seu redor em qualquer fone de ouvido em vez de reduzi-lo a estéreo. Apenas para fones, não para alto-falantes.",
+      "pt": "Coloca o som 5.1, 7.1 e Atmos à sua volta em quaisquer auscultadores em vez de o reduzir a estéreo. Apenas para auscultadores, não para colunas.",
+      "tr": "5.1, 7.1 ve Atmos sesi stereoya indirmek yerine herhangi bir kulaklıkta etrafınıza yerleştirir. Yalnızca kulaklık içindir, hoparlör için değil.",
+      "zh-Hans": "在任何耳机上将 5.1、7.1 和全景声环绕在你周围，而不是缩混为立体声。仅适用于耳机，不适用于扬声器。",
+      "ar": "يضع صوت 5.1 و7.1 وAtmos من حولك على أي سماعات بدلًا من دمجه إلى ستيريو. للسماعات فقط، وليس لمكبرات الصوت.",
+      "ro": "Așază sunetul 5.1, 7.1 și Atmos în jurul tău pe orice căști, în loc să-l reducă la stereo. Doar pentru căști, nu pentru boxe."
     }
   },
   "plurals": {

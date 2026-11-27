@@ -72,6 +72,7 @@
 "Background colour" = "Arka plan rengi";
 "Background from artwork" = "Görselden arka plan";
 "Below zero plays the sound earlier, as for wireless headphones that lag behind the picture." = "Sıfırın altı, görüntüye göre geciken kablosuz kulaklıklar için sesi daha erken çalar.";
+"Binaural for headphones" = "Kulaklık için binaural";
 "Bitrate" = "Bit hızı";
 "Black" = "Siyah";
 "Blue" = "Mavi";
@@ -276,6 +277,7 @@
 "Password for %@" = "%@ için şifre";
 "Password, and /PIN if the user has one" = "Şifre ve kullanıcının varsa /PIN'i";
 "Pink" = "Pembe";
+"Places 5.1, 7.1 and Atmos around you on any headphones instead of folding them to stereo. For headphones only, not speakers." = "5.1, 7.1 ve Atmos sesi stereoya indirmek yerine herhangi bir kulaklıkta etrafınıza yerleştirir. Yalnızca kulaklık içindir, hoparlör için değil.";
 "Play" = "Oynat";
 "Play %@" = "%@ oynat";
 "Play in Infuse" = "Infuse'da oynat";
@@ -357,6 +359,7 @@
 "Shrinks the whole app towards the middle of the screen, for TVs and projectors that cut off its edges." = "Kenarları kesen televizyonlar ve projektörler için tüm uygulamayı ekranın ortasına doğru küçültür.";
 "Shuffle" = "Karıştır";
 "Sign in" = "Oturum aç";
+"Sign out" = "Oturumu kapat";
 "Signed in as" = "Giriş yapan";
 "Signed out. Sign in again." = "Oturum kapandı. Tekrar giriş yap.";
 "Signing in…" = "Giriş yapılıyor…";

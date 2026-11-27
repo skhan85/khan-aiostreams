@@ -72,6 +72,7 @@
 "Background colour" = "لون الخلفية";
 "Background from artwork" = "خلفية من الصورة الفنية";
 "Below zero plays the sound earlier, as for wireless headphones that lag behind the picture." = "القيمة الأقل من الصفر تشغّل الصوت أبكر، كما في سماعات الرأس اللاسلكية التي يتأخر صوتها عن الصورة.";
+"Binaural for headphones" = "صوت ثنائي الأذن للسماعات";
 "Bitrate" = "معدل البت";
 "Black" = "أسود";
 "Blue" = "أزرق";
@@ -276,6 +277,7 @@
 "Password for %@" = "كلمة مرور %@";
 "Password, and /PIN if the user has one" = "كلمة المرور، و/PIN إن كان لدى المستخدم رمز";
 "Pink" = "وردي";
+"Places 5.1, 7.1 and Atmos around you on any headphones instead of folding them to stereo. For headphones only, not speakers." = "يضع صوت 5.1 و7.1 وAtmos من حولك على أي سماعات بدلًا من دمجه إلى ستيريو. للسماعات فقط، وليس لمكبرات الصوت.";
 "Play" = "تشغيل";
 "Play %@" = "تشغيل %@";
 "Play in Infuse" = "التشغيل في Infuse";
@@ -357,6 +359,7 @@
 "Shrinks the whole app towards the middle of the screen, for TVs and projectors that cut off its edges." = "يصغّر التطبيق بالكامل نحو منتصف الشاشة، لأجهزة التلفاز والعارض التي تقص حوافها.";
 "Shuffle" = "تشغيل عشوائي";
 "Sign in" = "تسجيل الدخول";
+"Sign out" = "تسجيل الخروج";
 "Signed in as" = "مسجّل الدخول باسم";
 "Signed out. Sign in again." = "تم تسجيل الخروج. سجّل الدخول مجددًا.";
 "Signing in…" = "جارٍ تسجيل الدخول…";

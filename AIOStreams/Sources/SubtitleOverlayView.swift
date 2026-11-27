@@ -282,10 +282,24 @@ final class SubtitleOverlayView: UIView {
         if outline > 0, !look.box {
             // The outline first, then the fill over it, as libass draws a border.
             let stroked = NSMutableAttributedString(attributedString: string)
+            let whole = NSRange(location: 0, length: stroked.length)
             stroked.addAttributes(
                 [.strokeColor: look.outlineColor, .strokeWidth: 200 * outline / max(font(of: string), 1)],
-                range: NSRange(location: 0, length: stroked.length)
+                range: whole
             )
+            // A styled file's dark text (a sign's black over a white border, whose border colour the
+            // cue doesn't carry) gets a light outline where the outline would be dark too, so it reads.
+            if look.outlineColor.luminance < 0.3 {
+                stroked.enumerateAttribute(.foregroundColor, in: whole) { value, range, _ in
+                    if let colour = value as? UIColor, colour.luminance < 0.3 {
+                        stroked.addAttribute(.strokeColor, value: UIColor.white, range: range)
+                    }
+                }
+            }
+            // Round joins, as libass strokes: a mitred join runs out into a spike at the sharp
+            // corners of letters such as M and N.
+            context.setLineJoin(.round)
+            context.setLineCap(.round)
             stroked.draw(with: inner, options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
             context.setShadow(offset: .zero, blur: 0)
         }
@@ -303,12 +317,23 @@ final class SubtitleOverlayView: UIView {
         layout.addTextContainer(container)
         storage.addLayoutManager(layout)
         var rects: [CGRect] = []
+        let text = string.string as NSString
         layout.enumerateLineFragments(forGlyphRange: layout.glyphRange(for: container)) { fragment, _, _, glyphs, _ in
+            // The line's text without the break or spaces it ends on: a line break's glyph reaches to
+            // the end of the line, which stretched a short line's band to the cue's widest.
+            var characters = layout.characterRange(forGlyphRange: glyphs, actualGlyphRange: nil)
+            while characters.length > 0,
+                  let scalar = UnicodeScalar(text.character(at: characters.location + characters.length - 1)),
+                  CharacterSet.whitespacesAndNewlines.contains(scalar) {
+                characters.length -= 1
+            }
+            guard characters.length > 0 else { return }
+            let visible = layout.glyphRange(forCharacterRange: characters, actualCharacterRange: nil)
             // The glyphs' own bounds, so a centred line's band is centred, but the fragment's height,
             // so the bands of a cue's lines meet.
-            let glyphs = layout.boundingRect(forGlyphRange: glyphs, in: container)
-            guard glyphs.width > 0 else { return }
-            rects.append(CGRect(x: glyphs.minX, y: fragment.minY, width: glyphs.width, height: fragment.height))
+            let bounds = layout.boundingRect(forGlyphRange: visible, in: container)
+            guard bounds.width > 0 else { return }
+            rects.append(CGRect(x: bounds.minX, y: fragment.minY, width: bounds.width, height: fragment.height))
         }
         return rects
     }
@@ -376,5 +401,14 @@ enum SubtitleTags {
         }
         // A tag at the start leaves the line's first space behind.
         while line.length > 0, line.string.first == " " { line.deleteCharacters(in: NSRange(location: 0, length: 1)) }
+    }
+}
+
+private extension UIColor {
+    /// Relative luminance, 0 for black to 1 for white.
+    var luminance: CGFloat {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard getRed(&r, green: &g, blue: &b, alpha: &a) else { return 1 }
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
     }
 }

@@ -72,6 +72,7 @@
 "Background colour" = "背景颜色";
 "Background from artwork" = "使用海报作为背景";
 "Below zero plays the sound earlier, as for wireless headphones that lag behind the picture." = "设为负值会让声音提前播放，适用于声音比画面延迟的无线耳机。";
+"Binaural for headphones" = "耳机双耳音效";
 "Bitrate" = "码率";
 "Black" = "黑色";
 "Blue" = "蓝色";
@@ -276,6 +277,7 @@
 "Password for %@" = "%@ 的密码";
 "Password, and /PIN if the user has one" = "密码，若用户有 PIN 则加上 /PIN";
 "Pink" = "粉色";
+"Places 5.1, 7.1 and Atmos around you on any headphones instead of folding them to stereo. For headphones only, not speakers." = "在任何耳机上将 5.1、7.1 和全景声环绕在你周围，而不是缩混为立体声。仅适用于耳机，不适用于扬声器。";
 "Play" = "播放";
 "Play %@" = "播放 %@";
 "Play in Infuse" = "在 Infuse 中播放";
@@ -357,6 +359,7 @@
 "Shrinks the whole app towards the middle of the screen, for TVs and projectors that cut off its edges." = "将整个应用向屏幕中央缩小，适用于会裁切画面边缘的电视和投影仪。";
 "Shuffle" = "随机播放";
 "Sign in" = "登录";
+"Sign out" = "退出登录";
 "Signed in as" = "登录身份";
 "Signed out. Sign in again." = "已退出登录。请重新登录。";
 "Signing in…" = "正在登录…";

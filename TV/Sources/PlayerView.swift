@@ -211,6 +211,10 @@ final class PlayerModel: ObservableObject {
     /// Read straight through, from byte 0 only: a catch-up programme, whose archive answers byte
     /// ranges with other bytes, or a source the engine found doing so. No seeking within it.
     private var sequential = false
+    /// Seek bar pictures past what the session holds and where the server has no trickplay, from
+    /// a reader of their own on the same source, as the official apps make theirs over a second
+    /// connection. Not for live or a source read straight through, which can't be read elsewhere.
+    private var frames: FrameExtractor?
 
     /// A programme a channel keeps, played from its start.
     private var isCatchUp: Bool {
@@ -227,6 +231,9 @@ final class PlayerModel: ObservableObject {
     func start() {
         guard loadTask == nil else { return }
         if isCatchUp, !isLive { sequential = true }
+        // A reader made for a source loaded before reads that source, not this one.
+        if let frames { Task { await frames.shutdown() } }
+        frames = nil
         guard let url = client.streamURL(itemId: request.item.id, source: request.source) else {
             failure = L("This version has no address to play.")
             return
@@ -412,7 +419,10 @@ final class PlayerModel: ObservableObject {
         if engine.supportsCacheBackedStills, let frame = await engine.scrubThumbnail(atSeconds: seconds, maxWidth: 480) {
             return frame
         }
-        return await trickplayPicture(at: seconds)
+        if let sheet = await trickplayPicture(at: seconds) { return sheet }
+        guard !isLive, !sequential, !stopped else { return nil }
+        if frames == nil { frames = engine.makeFrameExtractor() }
+        return await frames?.thumbnail(at: seconds, maxWidth: 480)
     }
 
     /// One thumbnail cut from the server's trickplay sheet that holds `seconds`.
@@ -865,6 +875,8 @@ final class PlayerModel: ObservableObject {
             Task { await client.fire("/Sessions/Playing/Stopped", body: payload) }
         }
         stopped = true
+        if let frames { Task { await frames.shutdown() } }
+        frames = nil
         bag.removeAll()
         overlay.clear()
         // The plain stop returns the TV to its default mode for the app's own screens.

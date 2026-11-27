@@ -246,6 +246,9 @@ struct SignInView: View {
             if session.asking && user.id == session.userId { session.carryOn(); return }
             name = user.name ?? ""
             password = ""
+            // Signed in already: another profile is entered through this session, which needs
+            // no password, only a PIN where the profile has one.
+            if session.asking { switchProfile(user); return }
             if user.hasPassword == false { signIn() } else { mode = .password(user) }
         } label: {
             UserAvatar(user: user, url: avatarURL(user))
@@ -366,11 +369,48 @@ struct SignInView: View {
         }
     }
 
-    private func signIn() {
-        guard let client = session.client, !working, !name.isEmpty else { return }
+    /// The web app's profile switch: a token for `user` from the session this Apple TV has. A
+    /// profile with a PIN refuses it without one, so its form asks, and the form's answer is
+    /// tried this way first (`signIn`). A server that can't switch this way leaves the password.
+    private func switchProfile(_ user: PublicUser) {
+        guard let client = session.client, client.token != nil, !working else {
+            mode = .password(user)
+            return
+        }
         working = true
         error = nil
         Task {
+            if let result = await profileToken(client, user.id, pin: nil) {
+                session.signIn(result)
+            } else {
+                mode = .password(user)
+            }
+            working = false
+        }
+    }
+
+    private func profileToken(_ client: JellyfinClient, _ userId: String, pin: String?) async -> AuthResult? {
+        guard client.token != nil else { return nil }
+        var body: [String: Any] = ["UserId": userId]
+        if let pin, !pin.isEmpty { body["Pw"] = pin }
+        return try? await client.post("/AIOStreams/Token", body: body) as AuthResult
+    }
+
+    private func signIn() {
+        guard let client = session.client, !working, !name.isEmpty else { return }
+        // Asked who's watching while signed in: the PIN through this session first.
+        var asked: String?
+        if session.asking, case .password(let user) = mode { asked = user.id }
+        let switching = asked
+        working = true
+        error = nil
+        Task {
+            if let switching, let result = await profileToken(client, switching, pin: password) {
+                poll?.cancel()
+                session.signIn(result)
+                working = false
+                return
+            }
             do {
                 let result: AuthResult = try await client.post(
                     "/Users/AuthenticateByName",
