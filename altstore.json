@@ -24,13 +24,22 @@
       "versions": [
         {
           "version": "1.0.0",
+          "date": "2026-11-27T08:38:06Z",
+          "localizedDescription": "Unsigned IPAs built from ee745cc: sign them when you install them (atvloadly for Apple TV).",
+          "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-181/KhanAIOStreams-1.0.0-181.ipa",
+          "size": 18366777,
+          "minOSVersion": "18.0",
+          "buildVersion": "181",
+          "sha256": "38b5053575ff9dba5e2645e879558aef5e72c7be1e3b98041d4c1a993cd6c98e"
+        },
+        {
+          "version": "1.0.0",
           "date": "2026-11-25T04:24:37Z",
           "localizedDescription": "Unsigned IPAs built from 6376790: sign them when you install them (atvloadly for Apple TV).",
           "downloadURL": "https://github.com/skhan85/khan-aiostreams/releases/download/build-1.0.0-172/KhanAIOStreams-1.0.0-172.ipa",
           "size": 18330144,
           "minOSVersion": "18.0",
-          "buildVersion": "172",
-          "sha256": "120f88a394acd958b96d3371ea12d2e0b05c17b3a252dc0eecf0ffb4037bde77"
+          "buildVersion": "172"
         },
         {
           "version": "1.0.0",
