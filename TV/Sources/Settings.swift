@@ -445,6 +445,9 @@ struct SettingsView: View {
     @EnvironmentObject private var prefs: Preferences
     @State private var chooser: Chooser?
     @State private var externalPlayer = ExternalPlayer.current
+    /// The Scrob server the built-in player reports to, and its link panel.
+    @State private var scrob = Scrob.address
+    @State private var linkingScrob = false
     @State private var picker: MultiChooser?
     /// The server lets another device sign in with a code this account approves.
     @State private var quickConnect = false
@@ -517,6 +520,10 @@ struct SettingsView: View {
             MultiChooserPanel(chooser: picker) { self.picker = nil }
                 .presentationBackground(.clear)
         }
+        .fullScreenCover(isPresented: $linkingScrob, onDismiss: { scrob = Scrob.address }) {
+            ScrobLinkPanel { linkingScrob = false }
+                .presentationBackground(.clear)
+        }
         .fullScreenCover(isPresented: $donating) {
             DonatePanel { donating = false }
                 .presentationBackground(.clear)
@@ -533,6 +540,17 @@ struct SettingsView: View {
                         ExternalPlayer.current = chosen
                         externalPlayer = chosen
                     }
+                }
+            }
+            section(L("Scrob"), note: L("Kept on this Apple TV. Plays in the built-in player go to your Scrob server, which passes them on to Trakt, Simkl or MDBList.")) {
+                row(L("Scrob server"), value: scrob?.host ?? L("Off")) { linkingScrob = true }
+                if scrob != nil {
+                    Button(L("Unlink Scrob")) {
+                        Scrob.unlink()
+                        scrob = nil
+                    }
+                    .buttonStyle(SoftPillStyle())
+                    .padding(.top, Theme.px(4))
                 }
             }
             section(L("Versions"), note: L("Saved to your account, so the web app and your other devices use them too.")) {

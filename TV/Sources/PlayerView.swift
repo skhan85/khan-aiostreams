@@ -89,6 +89,8 @@ final class PlayerModel: ObservableObject {
     private var progressTimer: Timer?
     private var reported = false
     private var stopped = false
+    /// Sends this play to Scrob, where a Scrob server is linked (Khan AIOStreams).
+    private var scrob: ScrobReporter?
 
     /// The account's track rules with the show's pick, and whether a pick here is remembered.
     let tracks: TrackRules
@@ -140,6 +142,9 @@ final class PlayerModel: ObservableObject {
         self.toneMapNits = toneMapNits
         self.rules = rules
         self.userId = userId
+        if !isLive, !request.isTrailer {
+            scrob = ScrobReporter(item: request.item, client: client, userId: userId)
+        }
         engine = SharedEngine.engine
         overlay = SubtitleOverlayView()
         overlay.look = look
@@ -547,7 +552,10 @@ final class PlayerModel: ObservableObject {
     private func setPaused(_ value: Bool) {
         let changed = value != paused
         paused = value
-        if changed, reported { report("/Sessions/Playing/Progress", event: value ? "Pause" : "Unpause") }
+        if changed, reported {
+            report("/Sessions/Playing/Progress", event: value ? "Pause" : "Unpause")
+            if value { scrob?.paused(at: position, of: duration) } else { scrob?.resumed(at: position, of: duration) }
+        }
     }
 
     func togglePause() {
@@ -855,7 +863,10 @@ final class PlayerModel: ObservableObject {
 
     private func report(_ path: String, event: String? = nil) {
         guard !stopped, !request.isTrailer else { return }
-        if path == "/Sessions/Playing" { reported = true }
+        if path == "/Sessions/Playing" {
+            reported = true
+            scrob?.started(at: position, of: duration)
+        }
         let payload = body(event.map { ["EventName": $0] } ?? [:])
         let client = client
         Task { await client.fire(path, body: payload) }
@@ -873,6 +884,7 @@ final class PlayerModel: ObservableObject {
             let payload = body()
             let client = client
             Task { await client.fire("/Sessions/Playing/Stopped", body: payload) }
+            scrob?.stopped(at: position, of: duration)
         }
         stopped = true
         if let frames { Task { await frames.shutdown() } }
