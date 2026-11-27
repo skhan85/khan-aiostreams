@@ -126,6 +126,14 @@ final class Session: ObservableObject {
     /// Whoever was watching carries on, without signing in again.
     func carryOn() { asking = false }
 
+    /// Who's watching, asked again while still signed in, so another profile is entered through
+    /// this session (as the web app switches profile) rather than signed in to afresh: a profile
+    /// signed in with a Quick Connect code has no password to type.
+    func ask() {
+        guard stage == .signedIn else { return }
+        asking = true
+    }
+
     /// The app went to the background, or came back: after half an hour away, who's watching is asked.
     func left() { leftAt = Date() }
 

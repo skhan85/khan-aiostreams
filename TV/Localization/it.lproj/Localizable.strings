@@ -72,6 +72,7 @@
 "Background colour" = "Colore dello sfondo";
 "Background from artwork" = "Sfondo dalla copertina";
 "Below zero plays the sound earlier, as for wireless headphones that lag behind the picture." = "Con valori negativi l'audio viene riprodotto in anticipo, utile per le cuffie wireless con ritardo rispetto all'immagine.";
+"Binaural for headphones" = "Binaurale per cuffie";
 "Bitrate" = "Bitrate";
 "Black" = "Nero";
 "Blue" = "Blu";
@@ -276,6 +277,7 @@
 "Password for %@" = "Password di %@";
 "Password, and /PIN if the user has one" = "Password, e /PIN se l'utente ne ha uno";
 "Pink" = "Rosa";
+"Places 5.1, 7.1 and Atmos around you on any headphones instead of folding them to stereo. For headphones only, not speakers." = "Colloca l’audio 5.1, 7.1 e Atmos intorno a te su qualsiasi cuffia invece di ridurlo a stereo. Solo per cuffie, non per altoparlanti.";
 "Play" = "Riproduci";
 "Play %@" = "Riproduci %@";
 "Play in Infuse" = "Riproduci in Infuse";
@@ -357,6 +359,7 @@
 "Shrinks the whole app towards the middle of the screen, for TVs and projectors that cut off its edges." = "Rimpicciolisce l’intera app verso il centro dello schermo, per TV e proiettori che ne tagliano i bordi.";
 "Shuffle" = "Casuale";
 "Sign in" = "Accedi";
+"Sign out" = "Disconnetti";
 "Signed in as" = "Accesso eseguito come";
 "Signed out. Sign in again." = "Disconnesso. Accedi di nuovo.";
 "Signing in…" = "Accesso…";

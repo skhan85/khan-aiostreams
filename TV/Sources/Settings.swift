@@ -175,6 +175,10 @@ final class Preferences: ObservableObject {
     @Published var nightMode: Bool = UserDefaults.standard.bool(forKey: "audio.nightMode") {
         didSet { UserDefaults.standard.set(nightMode, forKey: "audio.nightMode") }
     }
+    /// Surround rendered for headphones (AirPods and the like on the Apple TV) rather than folded.
+    @Published var binaural: Bool = UserDefaults.standard.bool(forKey: "audio.binaural") {
+        didSet { UserDefaults.standard.set(binaural, forKey: "audio.binaural") }
+    }
     /// How fast playback runs while Select is held on the video: 1.5, 2 or 3.
     @Published var holdRate: Double = UserDefaults.standard.object(forKey: "controls.holdRate") as? Double ?? 2 {
         didSet { UserDefaults.standard.set(holdRate, forKey: "controls.holdRate") }
@@ -224,7 +228,8 @@ final class Preferences: ObservableObject {
         AudioShaping(
             maxChannels: ["stereo": 2, "5.1": 6, "7.1": 8][audioChannels],
             dialogueGainDB: Double(dialogueBoost),
-            compressor: nightMode ? .night : nil
+            compressor: nightMode ? .night : nil,
+            binaural: binaural
         )
     }
 
@@ -623,6 +628,8 @@ struct SettingsView: View {
                 note(L("Raises the centre channel, where surround sound puts dialogue. Not for sound passed through."))
                 row(L("Night mode"), value: prefs.nightMode ? L("On") : L("Off")) { prefs.nightMode.toggle() }
                 note(L("Evens out loud and quiet scenes, for listening at a low volume. Not for sound passed through."))
+                row(L("Binaural for headphones"), value: prefs.binaural ? L("On") : L("Off")) { prefs.binaural.toggle() }
+                note(L("Places 5.1, 7.1 and Atmos around you on any headphones instead of folding them to stereo. For headphones only, not speakers."))
                 row(L("Delay: %@", delayName(prefs.audioDelayMs)), value: "") {
                     chooser = Chooser(title: L("Delay: %@", delayName(prefs.audioDelayMs)),
                                       options: stride(from: -1000, through: 1000, by: 50).map { (delayName($0), String($0)) },
@@ -812,7 +819,8 @@ struct SettingsView: View {
                 }
                 note(L("Also when you come back to it after half an hour. Whoever was watching carries on without their PIN."))
                 HStack(spacing: Theme.px(8)) {
-                    Button(L("Switch user")) { session.signOut() }.buttonStyle(SoftPillStyle())
+                    Button(L("Switch user")) { session.ask() }.buttonStyle(SoftPillStyle())
+                    Button(L("Sign out")) { session.signOut() }.buttonStyle(SoftPillStyle())
                     Button(L("Change server")) { session.forgetServer() }.buttonStyle(SoftPillStyle())
                 }
                 .padding(.top, Theme.px(4))

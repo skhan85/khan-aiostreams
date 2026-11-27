@@ -11,6 +11,9 @@ struct PressHold: UIViewRepresentable {
     var presses: [UIPress.PressType] = [.leftArrow, .rightArrow]
     var begin: (_ direction: Int) -> Bool
     var end: () -> Void
+    /// A press let go before it became a hold. UIKit hands it to this recognizer on the window
+    /// whatever SwiftUI makes of it, so it is never missed.
+    var tap: ((_ direction: Int) -> Void)?
 
     func makeUIView(context: Context) -> Catcher {
         let view = Catcher()
@@ -22,6 +25,7 @@ struct PressHold: UIViewRepresentable {
     func updateUIView(_ view: Catcher, context: Context) {
         view.begin = begin
         view.end = end
+        view.tap = tap
     }
 
     static func dismantleUIView(_ view: Catcher, coordinator: ()) {
@@ -31,6 +35,7 @@ struct PressHold: UIViewRepresentable {
     final class Catcher: UIView, UIGestureRecognizerDelegate {
         var begin: (Int) -> Bool = { _ in false }
         var end: () -> Void = {}
+        var tap: ((Int) -> Void)?
         var presses: [UIPress.PressType] = [.leftArrow, .rightArrow]
         private var watcher: Watcher?
 
@@ -42,6 +47,7 @@ struct PressHold: UIViewRepresentable {
             watcher.delegate = self
             watcher.began = { [weak self] direction in self?.begin(direction) ?? false }
             watcher.ended = { [weak self] in self?.end() }
+            watcher.tapped = { [weak self] direction in self?.tap?(direction) }
             newWindow.addGestureRecognizer(watcher)
             self.watcher = watcher
         }
@@ -66,6 +72,7 @@ struct PressHold: UIViewRepresentable {
     final class Watcher: UIGestureRecognizer {
         var began: (Int) -> Bool = { _ in false }
         var ended: () -> Void = {}
+        var tapped: (Int) -> Void = { _ in }
         private var timer: Timer?
         private var holding = false
         private var direction = 0
@@ -96,7 +103,13 @@ struct PressHold: UIViewRepresentable {
             }
         }
 
-        override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent) { finish() }
+        override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent) {
+            // Still timing, so not a hold: a click.
+            let click = timer != nil && !holding && presses.contains { self.presses.contains($0.type) }
+            let direction = direction
+            finish()
+            if click { tapped(direction) }
+        }
         override func pressesCancelled(_ presses: Set<UIPress>, with event: UIPressesEvent) { finish() }
 
         /// Failing at the end of each press lets UIKit reset it for the next.

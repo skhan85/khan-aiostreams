@@ -72,6 +72,7 @@
 "Background colour" = "Culoarea fundalului";
 "Background from artwork" = "Imagine de fundal preluată din ilustrație";
 "Below zero plays the sound earlier, as for wireless headphones that lag behind the picture." = "La valori negative, sunetul este redat mai devreme pentru a compensa întârzierea căștilor wireless față de imagine.";
+"Binaural for headphones" = "Binaural pentru căști";
 "Bitrate" = "Rată de biți";
 "Black" = "Negru";
 "Blue" = "Albastru";
@@ -276,6 +277,7 @@
 "Password for %@" = "Parola pentru %@";
 "Password, and /PIN if the user has one" = "Parola și /PIN, dacă utilizatorul are unul";
 "Pink" = "Roz";
+"Places 5.1, 7.1 and Atmos around you on any headphones instead of folding them to stereo. For headphones only, not speakers." = "Așază sunetul 5.1, 7.1 și Atmos în jurul tău pe orice căști, în loc să-l reducă la stereo. Doar pentru căști, nu pentru boxe.";
 "Play" = "Redă";
 "Play %@" = "Redă %@";
 "Play in Infuse" = "Redă în Infuse";
@@ -357,6 +359,7 @@
 "Shrinks the whole app towards the middle of the screen, for TVs and projectors that cut off its edges." = "Micșorează întreaga aplicație spre mijlocul ecranului, pentru televizoare și proiectoare care îi taie marginile.";
 "Shuffle" = "Amestecă";
 "Sign in" = "Conectează-te";
+"Sign out" = "Deconectează-te";
 "Signed in as" = "Conectat ca";
 "Signed out. Sign in again." = "Deconectat. Conectează-te din nou.";
 "Signing in…" = "Se conectează…";

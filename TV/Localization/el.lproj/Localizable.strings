@@ -72,6 +72,7 @@
 "Background colour" = "Χρώμα φόντου";
 "Background from artwork" = "Εικόνα τίτλου ως φόντο";
 "Below zero plays the sound earlier, as for wireless headphones that lag behind the picture." = "Οι αρνητικές τιμές αναπαράγουν τον ήχο νωρίτερα, για παράδειγμα όταν τα ασύρματα ακουστικά έχουν καθυστέρηση σε σχέση με την εικόνα.";
+"Binaural for headphones" = "Binaural για ακουστικά";
 "Bitrate" = "Ρυθμός bit";
 "Black" = "Μαύρο";
 "Blue" = "Μπλε";
@@ -276,6 +277,7 @@
 "Password for %@" = "Κωδικός πρόσβασης για %@";
 "Password, and /PIN if the user has one" = "Κωδικός πρόσβασης, και /PIN αν ο χρήστης έχει";
 "Pink" = "Ροζ";
+"Places 5.1, 7.1 and Atmos around you on any headphones instead of folding them to stereo. For headphones only, not speakers." = "Τοποθετεί τον ήχο 5.1, 7.1 και Atmos γύρω σας σε οποιαδήποτε ακουστικά αντί να τον συμπτύσσει σε στερεοφωνικό. Μόνο για ακουστικά, όχι για ηχεία.";
 "Play" = "Αναπαραγωγή";
 "Play %@" = "Αναπαραγωγή %@";
 "Play in Infuse" = "Αναπαραγωγή στο Infuse";
@@ -357,6 +359,7 @@
 "Shrinks the whole app towards the middle of the screen, for TVs and projectors that cut off its edges." = "Σμικρύνει όλη την εφαρμογή προς το κέντρο της οθόνης, για τηλεοράσεις και προβολείς που κόβουν τις άκρες της.";
 "Shuffle" = "Τυχαία σειρά";
 "Sign in" = "Σύνδεση";
+"Sign out" = "Αποσύνδεση";
 "Signed in as" = "Συνδεδεμένος ως";
 "Signed out. Sign in again." = "Αποσυνδέθηκες. Συνδέσου ξανά.";
 "Signing in…" = "Σύνδεση…";

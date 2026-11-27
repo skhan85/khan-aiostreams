@@ -72,6 +72,7 @@
 "Background colour" = "Warna latar belakang";
 "Background from artwork" = "Latar belakang dari artwork";
 "Below zero plays the sound earlier, as for wireless headphones that lag behind the picture." = "Nilai di bawah nol memutar suara lebih awal, misalnya untuk headphone nirkabel yang suaranya tertinggal dari gambar.";
+"Binaural for headphones" = "Binaural untuk headphone";
 "Bitrate" = "Bitrate";
 "Black" = "Hitam";
 "Blue" = "Biru";
@@ -276,6 +277,7 @@
 "Password for %@" = "Kata sandi untuk %@";
 "Password, and /PIN if the user has one" = "Kata sandi, dan /PIN jika pengguna punya";
 "Pink" = "Merah muda";
+"Places 5.1, 7.1 and Atmos around you on any headphones instead of folding them to stereo. For headphones only, not speakers." = "Menempatkan suara 5.1, 7.1 dan Atmos di sekitar Anda di headphone apa pun alih-alih melipatnya ke stereo. Hanya untuk headphone, bukan speaker.";
 "Play" = "Putar";
 "Play %@" = "Putar %@";
 "Play in Infuse" = "Putar di Infuse";
@@ -357,6 +359,7 @@
 "Shrinks the whole app towards the middle of the screen, for TVs and projectors that cut off its edges." = "Mengecilkan seluruh aplikasi ke tengah layar, untuk TV dan proyektor yang memotong tepinya.";
 "Shuffle" = "Acak urutan";
 "Sign in" = "Masuk";
+"Sign out" = "Keluar";
 "Signed in as" = "Masuk sebagai";
 "Signed out. Sign in again." = "Keluar. Masuk lagi.";
 "Signing in…" = "Masuk…";

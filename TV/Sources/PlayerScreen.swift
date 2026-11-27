@@ -183,8 +183,6 @@ private struct PlayerChrome: View {
     var changeChannel: (Int) -> Void = { _ in }
     /// The stats over the video's corner.
     @State private var stats = false
-    /// Select was held for faster playback, so its letting go isn't a press.
-    @State private var heldSelect = false
 
     @EnvironmentObject private var session: Session
     @EnvironmentObject private var prefs: Preferences
@@ -280,11 +278,25 @@ private struct PlayerChrome: View {
                 presses: [.select],
                 begin: { _ in
                     guard !shown, panel == nil, !model.isLive, !model.paused, model.failure == nil else { return false }
-                    heldSelect = true
                     model.hold(prefs.holdRate)
                     return true
                 },
-                end: { model.hold(nil) }
+                end: { model.hold(nil) },
+                // One click of Select plays or pauses, as Apple's player does: on the video, where it
+                // also shows the controls on the timeline, and on the timeline. Caught here, by the
+                // press itself, rather than by tap gestures, which can miss a click.
+                tap: { _ in
+                    guard panel == nil else { return }
+                    if !shown, focus == .surface || focus == nil {
+                        input()
+                        model.togglePause()
+                        reveal(model.isLive ? .play : .bar)
+                    } else if shown, focus == .bar {
+                        input()
+                        model.togglePause()
+                        wake()
+                    }
+                }
             )
             .frame(width: 0, height: 0)
 
@@ -311,10 +323,13 @@ private struct PlayerChrome: View {
             )
             .frame(width: 0, height: 0)
 
-            // Takes the remote while the controls are hidden.
-            Color.clear
-                .contentShape(Rectangle())
-                .focusable(!shown && panel == nil)
+            // Takes the remote while the controls are hidden. Its Select is caught below with the
+            // timeline's, by the press watcher, which a tap gesture on a focusable view could miss.
+            Button {} label: {
+                Color.clear.contentShape(Rectangle())
+            }
+                .buttonStyle(SurfaceStyle())
+                .disabled(shown || panel != nil)
                 .focused($focus, equals: .surface)
                 .onMoveCommand { direction in
                     input()
@@ -329,13 +344,6 @@ private struct PlayerChrome: View {
                     case .down where model.request.item.isChannel: changeChannel(1)
                     default: reveal(.play)
                     }
-                }
-                .onTapGesture {
-                    if heldSelect { heldSelect = false; return }
-                    input()
-                    // One click plays or pauses, as Apple's player does, and shows where it is.
-                    model.togglePause()
-                    reveal(model.isLive ? .play : .bar)
                 }
 
             if let rate = model.heldRate {
@@ -571,7 +579,6 @@ private struct PlayerChrome: View {
                     }
                     wake()
                 }
-                .onTapGesture { model.togglePause(); wake() }
                 // Floats over the bar, so the controls stay where they are while it shows.
                 .overlay(alignment: .bottomLeading) { scrubPreview }
             }
@@ -1022,6 +1029,11 @@ private struct ProgressTrack: View {
 }
 
 /// The skip button over the video: white on dark, filling white with focus.
+/// Draws nothing for being focused or pressed: the video is the whole surface.
+private struct SurfaceStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View { configuration.label }
+}
+
 private struct SkipStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         Focused { focused in
