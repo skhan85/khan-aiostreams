@@ -317,6 +317,14 @@ final class RootViewController: UIViewController, WKNavigationDelegate, WKUIDele
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
     override var preferredScreenEdgesDeferringSystemGestures: UIRectEdge { fullscreen ? .all : [] }
 
+    /// The log and device details, to send wherever the person likes.
+    private func shareDiagnostics() {
+        let share = UIActivityViewController(activityItems: [diagnostics(web: nil, server: nil)], applicationActivities: nil)
+        share.popoverPresentationController?.sourceView = view
+        share.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)
+        present(share, animated: true)
+    }
+
     // MARK: - Messages
 
     private func handle(_ type: String, _ message: [String: Any]) {
@@ -367,11 +375,25 @@ final class RootViewController: UIViewController, WKNavigationDelegate, WKUIDele
         case "diagnostics":
             bridge.send(["type": "diagnostics", "text": diagnostics(web: message["web"] as? String, server: message["server"] as? String)])
         case "share-diagnostics":
-            // Settings > iOS app > Open: the log and device details, to send wherever the person likes.
-            let share = UIActivityViewController(activityItems: [diagnostics(web: nil, server: nil)], applicationActivities: nil)
-            share.popoverPresentationController?.sourceView = view
-            share.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)
-            present(share, animated: true)
+            // Settings > iOS app > Open: Khan AIOStreams offers its Scrob link here too.
+            let sheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+            sheet.addAction(UIAlertAction(title: String(localized: "Share diagnostics"), style: .default) { [weak self] _ in
+                self?.shareDiagnostics()
+            })
+            if let server = Scrob.address {
+                sheet.addAction(UIAlertAction(title: String(localized: "Unlink Scrob (\(server.host ?? ""))"), style: .destructive) { _ in
+                    Scrob.unlink()
+                })
+            } else {
+                sheet.addAction(UIAlertAction(title: String(localized: "Link Scrob…"), style: .default) { [weak self] _ in
+                    guard let self else { return }
+                    PhoneScrobLink.ask(from: self)
+                })
+            }
+            sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
+            sheet.popoverPresentationController?.sourceView = view
+            sheet.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)
+            present(sheet, animated: true)
         case "crash-report":
             bridge.send(["type": "crash-report"])
         case "links-ready":
