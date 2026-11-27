@@ -147,6 +147,7 @@ final class PlayerChannel {
         engine.$subtitleCues
             .sink { [weak self] cues in self?.overlay.setCues(cues) }
             .store(in: &bag)
+        overlay.follow(engine, into: &bag)
         engine.clock.$sourceTime
             .sink { [weak self] seconds in self?.overlay.setTime(seconds) }
             .store(in: &bag)
@@ -474,6 +475,8 @@ final class PlayerChannel {
         }
         options.preferredAudioLanguages = JSON.strings(message["audioLanguages"])
         options.audioShaping = shaping
+        // ASS and SSA events keep their markup, for libass to draw them as styled.
+        options.preserveASSMarkup = true
         // TrueHD Atmos and DTS:X with their heights, which iOS plays as Spatial Audio (OS 26 and later).
         options.objectAudioRendering = .render(.l714)
         // Anime upscaling: the page asks for it on a title it knows is anime, with its setting on.

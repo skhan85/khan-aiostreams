@@ -198,6 +198,7 @@ final class PlayerModel: ObservableObject {
         engine.$activeAudioTrackIndex.sink { [weak self] in self?.activeAudio = $0 }.store(in: &bag)
         engine.$activeSubtitleTrackIndex.sink { [weak self] in self?.activeSubtitle = $0 }.store(in: &bag)
         engine.$subtitleCues.sink { [weak self] in self?.overlay.setCues($0) }.store(in: &bag)
+        overlay.follow(engine, into: &bag)
         engine.clock.$sourceTime.sink { [weak self] in self?.overlay.setTime($0) }.store(in: &bag)
         Publishers.CombineLatest(engine.$sourceVideoWidth, engine.$sourceVideoHeight)
             .sink { [weak self] width, height in
@@ -274,6 +275,8 @@ final class PlayerModel: ObservableObject {
         }
         // Sound shaped as the Apple TV's settings ask, and its usual delay.
         options.audioShaping = audioShaping
+        // ASS and SSA events keep their markup, for libass to draw them as styled.
+        options.preserveASSMarkup = true
         options.audioDelaySeconds = defaultAudioDelay
         // TrueHD Atmos and DTS:X with their heights, rendered for the receiver's speakers and sent to it
         // as Dolby MAT (tvOS 26 and later); off, they play as their 7.1 channels.

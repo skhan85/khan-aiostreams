@@ -34,11 +34,17 @@ let package = Package(
             exact: "7.76.0",
             traits: ["DolbyVisionFelCurves"]
         ),
+        // libass, for ASS and SSA subtitles drawn as styled (MIT; libass ISC, with FreeType,
+        // HarfBuzz, FriBidi and fontconfig), prebuilt for iOS and tvOS.
+        .package(url: "https://github.com/mihai8804858/swift-libass", exact: "1.4.0"),
     ],
     targets: [
         .target(
             name: "AetherEngineFeatures",
-            dependencies: [.product(name: "AetherEngine", package: "AetherEngine")]
+            dependencies: [
+                .product(name: "AetherEngine", package: "AetherEngine"),
+                .product(name: "SwiftLibass", package: "swift-libass"),
+            ]
         ),
     ]
 )

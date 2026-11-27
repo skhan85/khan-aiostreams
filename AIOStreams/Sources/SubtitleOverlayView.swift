@@ -1,5 +1,6 @@
 import AetherEngineFeatures
 import AVFoundation
+import Combine
 import UIKit
 
 /// The page's subtitle style, in the units mpv and libass share (sizes at a 720-line script).
@@ -51,7 +52,13 @@ struct SubtitleLook: Equatable {
 
 /// Draws the engine's subtitle cues over the video and beneath the page, against the source clock.
 final class SubtitleOverlayView: UIView {
-    var look = SubtitleLook() { didSet { if look != oldValue { setNeedsDisplay() } } }
+    var look = SubtitleLook() {
+        didSet {
+            guard look != oldValue else { return }
+            if look.forceStyle != oldValue.forceStyle, let engine = assEngine { chooseASS(engine) }
+            setNeedsDisplay()
+        }
+    }
     /// Seconds the subtitles show later than the file says.
     var delay: Double = 0 { didSet { refresh() } }
     /// Off while the page's mini player or a menu covers the picture.
@@ -62,6 +69,19 @@ final class SubtitleOverlayView: UIView {
     private var cues: [SubtitleCue] = []
     private var time: Double = 0
     private var visible: [Int] = []
+
+    /// libass, while the active track is ASS or SSA and the page's style doesn't override it.
+    private var ass: AssRenderer?
+    private var assHeader: String?
+    private var assFrame: AssRenderer.Frame?
+    private var assScale: CGFloat = 1
+    private var assRendering = false
+    private var assWanted = false
+    private var assFonts: [FontAttachment] = []
+    private weak var assEngine: AetherEngine?
+    /// The active track's events are raw ASS lines (the engine keeps their markup for libass),
+    /// which, when the page's style overrides them, are drawn here as their words alone.
+    private var rawASS = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -75,17 +95,100 @@ final class SubtitleOverlayView: UIView {
 
     func setCues(_ cues: [SubtitleCue]) {
         self.cues = cues
+        ass?.feed(cues)
         refresh(force: true)
+        renderASS()
     }
 
     func setTime(_ seconds: Double) {
         time = seconds
-        refresh()
+        if ass != nil { renderASS() } else { refresh() }
     }
 
     func clear() {
         cues = []
+        assFrame = nil
         refresh(force: true)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        renderASS()
+    }
+
+    // MARK: ASS and SSA through libass
+
+    /// Keeps libass on the active track while it's ASS or SSA, with the file's fonts.
+    func follow(_ engine: AetherEngine, into bag: inout Set<AnyCancellable>) {
+        assEngine = engine
+        Publishers.Merge3(
+            engine.$activeSubtitleTrackIndex.map { _ in () },
+            engine.$subtitleTracks.map { _ in () },
+            engine.$sidecarASSHeader.map { _ in () }
+        )
+        // After the change lands: a @Published sends before it stores.
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self, weak engine] in
+            guard let self, let engine else { return }
+            self.chooseASS(engine)
+        }
+        .store(in: &bag)
+        engine.$fontAttachments
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] fonts in
+                self?.assFonts = fonts
+                self?.ass?.add(fonts: fonts)
+            }
+            .store(in: &bag)
+    }
+
+    private func chooseASS(_ engine: AetherEngine) {
+        let track = engine.subtitleTracks.first { $0.id == engine.activeSubtitleTrackIndex }
+        let styled = track.map { AssRenderer.handles(codec: $0.codec) } ?? false
+        rawASS = styled
+        let header = styled && !look.forceStyle ? (track?.assHeader ?? engine.sidecarASSHeader) : nil
+        guard header != assHeader else { return }
+        assHeader = header
+        assFrame = nil
+        if let header {
+            if ass == nil {
+                ass = AssRenderer()
+                ass?.add(fonts: assFonts)
+            }
+            ass?.load(header: header)
+            ass?.feed(cues)
+        } else {
+            ass = nil
+        }
+        refresh(force: true)
+        renderASS()
+    }
+
+    /// One frame at a time from libass, always for the latest time.
+    private func renderASS() {
+        guard let ass else { return }
+        guard !assRendering else {
+            assWanted = true
+            return
+        }
+        let video = videoRect
+        guard video.width > 0, video.height > 0 else { return }
+        let scale = window?.screen.scale ?? traitCollection.displayScale
+        assScale = scale
+        assRendering = true
+        let size = CGSize(width: (video.width * scale).rounded(), height: (video.height * scale).rounded())
+        ass.render(at: time - delay, size: size, video: videoSize) { [weak self] frame in
+            guard let self else { return }
+            self.assRendering = false
+            if frame?.image !== self.assFrame?.image {
+                self.assFrame = frame
+                self.setNeedsDisplay()
+            }
+            if self.assWanted {
+                self.assWanted = false
+                self.renderASS()
+            }
+        }
     }
 
     private var showing: [SubtitleCue] {
@@ -116,6 +219,18 @@ final class SubtitleOverlayView: UIView {
     }
 
     override func draw(_ rect: CGRect) {
+        if ass != nil {
+            // libass draws the whole frame, placed on the picture as the script asks.
+            if let frame = assFrame {
+                let video = videoRect
+                let at = CGRect(
+                    x: video.minX + frame.rect.minX / assScale, y: video.minY + frame.rect.minY / assScale,
+                    width: frame.rect.width / assScale, height: frame.rect.height / assScale
+                )
+                UIImage(cgImage: frame.image).draw(in: at)
+            }
+            return
+        }
         let cues = showing
         guard !cues.isEmpty, let context = UIGraphicsGetCurrentContext() else { return }
         let video = videoRect.intersection(bounds).isNull ? bounds : videoRect
@@ -131,7 +246,7 @@ final class SubtitleOverlayView: UIView {
                 drawImage(image, in: video, below: line, context: context)
             case .text(let raw):
                 // A file's ASS tags in plain text are its instructions, not its words.
-                let (text, alignment) = SubtitleTags.clean(raw)
+                let (text, alignment) = SubtitleTags.clean(rawASS ? AssRenderer.eventText(raw) : raw)
                 let string = attributed(runs: nil, text: text, height: shownVideo.height)
                 route(string, placement: cue.placement ?? alignment.map { SubtitleTextPlacement(alignment: $0, position: nil) },
                       bottom: &bottomStack, placed: &placed)
